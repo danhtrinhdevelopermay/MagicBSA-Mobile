@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
@@ -96,11 +97,12 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
       final double scaleX = _originalImageSize!.width / _imageDisplaySize!.width;
       final double scaleY = _originalImageSize!.height / _imageDisplaySize!.height;
 
-      // Create binary mask directly with original image dimensions (no resizing needed)
+      // Create grayscale mask with original image dimensions 
+      // Clipdrop API prefers grayscale masks for better accuracy
       final img.Image binaryMask = img.Image(
         width: originalImg.width,
         height: originalImg.height,
-        numChannels: 3, // RGB format for better compatibility with Clipdrop API
+        numChannels: 1, // Grayscale format for better Clipdrop API compatibility
       );
 
       // Fill with black background (0 = keep as per Clipdrop API)
@@ -115,15 +117,16 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
         // Extract points from path and scale them to original image coordinates
         final ui.PathMetrics pathMetrics = path.computeMetrics();
         for (final ui.PathMetric pathMetric in pathMetrics) {
-          for (double distance = 0.0; distance < pathMetric.length; distance += 1.0) {
+          // Use smaller distance step for more detailed mask coverage
+          for (double distance = 0.0; distance < pathMetric.length; distance += 0.5) {
             final ui.Tangent? tangent = pathMetric.getTangentForOffset(distance);
             if (tangent != null) {
               // Convert display coordinates to original image coordinates
               final int originalX = (tangent.position.dx * scaleX).round();
               final int originalY = (tangent.position.dy * scaleY).round();
               
-              // Apply brush size in original image coordinates
-              final int brushRadius = (_brushSize * scaleX * 0.5).round();
+              // Apply brush size in original image coordinates with minimum size
+              final int brushRadius = math.max(2, (_brushSize * math.min(scaleX, scaleY) * 0.5).round());
               
               // Draw brush stroke as circle in original image coordinates
               for (int dy = -brushRadius; dy <= brushRadius; dy++) {
@@ -135,7 +138,7 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
                   if (pixelX >= 0 && pixelX < originalImg.width && 
                       pixelY >= 0 && pixelY < originalImg.height &&
                       (dx * dx + dy * dy) <= (brushRadius * brushRadius)) {
-                    binaryMask.setPixelRgb(pixelX, pixelY, 255, 255, 255); // White = remove
+                    binaryMask.setPixel(pixelX, pixelY, img.ColorRgb8(255, 255, 255)); // White = remove
                     whitePixelCount++;
                   }
                 }
@@ -145,20 +148,31 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
         }
       }
 
-      // Validate mask quality
+      // Validate mask quality with detailed logging
       double whitePercentage = (whitePixelCount / totalPixels) * 100;
-      print('Mask created: ${originalImg.width}x${originalImg.height} pixels');
-      print('White pixels (remove): $whitePixelCount (${whitePercentage.toStringAsFixed(1)}%)');
-      print('Black pixels (keep): ${totalPixels - whitePixelCount} (${(100 - whitePercentage).toStringAsFixed(1)}%)');
+      print('=== MASK CREATION DEBUG ===');
+      print('Original image: ${originalImg.width}x${originalImg.height} pixels');
+      print('Display size: ${_imageDisplaySize!.width}x${_imageDisplaySize!.height}');
+      print('Scale factors: scaleX=${scaleX.toStringAsFixed(2)}, scaleY=${scaleY.toStringAsFixed(2)}');
+      print('Paths drawn: ${_paths.length}');
+      print('Brush size: $_brushSize (display) -> ${(_brushSize * math.min(scaleX, scaleY) * 0.5).round()} (image)');
+      print('White pixels (remove): $whitePixelCount (${whitePercentage.toStringAsFixed(2)}%)');
+      print('Black pixels (keep): ${totalPixels - whitePixelCount} (${(100 - whitePercentage).toStringAsFixed(2)}%)');
       
-      // Safety check - if more than 80% is white, something is very wrong
-      if (whitePercentage > 80.0) {
+      // Safety check - if more than 50% is white, likely accidental full removal
+      if (whitePercentage > 50.0) {
         print('WARNING: Mask có thể bị lỗi - quá nhiều vùng được đánh dấu xóa');
         throw Exception('Mask không hợp lệ: ${whitePercentage.toStringAsFixed(1)}% ảnh sẽ bị xóa. Vui lòng vẽ lại ít hơn.');
       }
       
+      // Check if mask has any drawing
       if (whitePixelCount == 0) {
         throw Exception('Không phát hiện vùng vẽ. Vui lòng vẽ trên những vùng cần xóa.');
+      }
+      
+      // Check minimum mask coverage (at least 0.1% to be effective)
+      if (whitePercentage < 0.1) {
+        print('WARNING: Mask rất nhỏ (${whitePercentage.toStringAsFixed(3)}%), có thể không hiệu quả');
       }
 
       // Save mask file as PNG

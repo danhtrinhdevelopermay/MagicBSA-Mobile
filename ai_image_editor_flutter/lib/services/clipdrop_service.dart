@@ -231,10 +231,10 @@ class ClipDropService {
                 filename: 'mask.png', // Force PNG extension for mask
               ),
             ));
-            // Add mode parameter for better quality (fast or quality)
-            formData.fields.add(MapEntry('mode', 'quality'));
+            // Add mode parameter - using fast mode for better response  
+            formData.fields.add(MapEntry('mode', 'fast'));
             print('Cleanup API call with mask: ${maskFile.path}');
-            print('Mode: quality (better results, slower processing)');
+            print('Mode: fast (faster processing, good quality)');
           } else {
             throw Exception('Cleanup operation requires a mask file');
           }

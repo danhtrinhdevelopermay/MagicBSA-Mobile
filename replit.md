@@ -52,6 +52,14 @@ Focus on practical, working solutions over theoretical explanations.
     * PathMetrics, PathMetric, and Tangent types properly prefixed with ui. namespace
     * Resolved "isn't a type" compilation errors that prevented APK build on GitHub Actions
     * Build process now completes successfully without UI type conflicts
+✓ **ENHANCED OBJECT REMOVAL MASK ACCURACY** - Improved mask generation for better AI object removal:
+  - Changed mask format from RGB to grayscale (1 channel) for better Clipdrop API compatibility
+  - Reduced path sampling distance from 1.0 to 0.5 for more detailed mask coverage
+  - Enhanced brush radius calculation with minimum size (2px) and proper scaling
+  - Added comprehensive debug logging with scale factors, pixel counts, and percentages
+  - Switched API mode from "quality" to "fast" for better response and reliability
+  - Improved safety validation: 50% threshold (down from 80%) and minimum 0.1% coverage check
+  - Enhanced coordinate mapping precision for accurate object targeting
   - Updated ResultWidget to support both File and Uint8List for originalImage parameter
   - Fixed history_screen.dart type mismatch when passing originalImageData to ResultWidget
   - Removed duplicate main_screen_fixed.dart file causing analysis conflicts
