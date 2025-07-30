@@ -16,6 +16,12 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 30, 2025)
 
+✓ **FIXED LOADING OVERLAY APPEARING ON APP START** - Resolved issue where loading screen showed immediately when opening app:
+  - Changed _currentOperation from String to String? (nullable) in ImageEditProvider
+  - Fixed initialization from empty string '' to null to prevent false positive loading states
+  - Updated all methods (reset, processImage, _setError, clearError) to properly set _currentOperation = null
+  - Loading overlay now only appears during actual image processing operations, not on app startup
+  - App now opens normally to home screen without unwanted loading overlay
 ✓ **FIXED GITHUB ACTIONS APK BUILD COMPILATION ERRORS** - Resolved all compilation errors preventing successful APK build:
   - Fixed missing required parameters in main_screen.dart for ResultWidget, EnhancedEditorWidget, and LoadingOverlayWidget
   - Added conditional rendering to prevent widgets from rendering without required data

@@ -22,7 +22,7 @@ class ImageEditProvider extends ChangeNotifier {
   Uint8List? _processedImage;
   ProcessingState _state = ProcessingState.idle;
   String _errorMessage = '';
-  String _currentOperation = '';
+  String? _currentOperation;
   double _progress = 0.0;
 
   // Getters
@@ -30,7 +30,7 @@ class ImageEditProvider extends ChangeNotifier {
   Uint8List? get processedImage => _processedImage;
   ProcessingState get state => _state;
   String get errorMessage => _errorMessage;
-  String get currentOperation => _currentOperation;
+  String? get currentOperation => _currentOperation;
   double get progress => _progress;
 
   // Pick image from gallery or camera
@@ -133,6 +133,7 @@ class ImageEditProvider extends ChangeNotifier {
       }
       
       _processedImage = result;
+      _currentOperation = null; // Clear current operation when completed
       _setState(ProcessingState.completed);
       _progress = 1.0;
       
@@ -175,11 +176,12 @@ class ImageEditProvider extends ChangeNotifier {
       );
       
       _processedImage = result;
+      _currentOperation = null; // Clear current operation when completed
       _setState(ProcessingState.completed);
       _progress = 1.0;
       
       // Save to history after successful processing
-      await _saveToHistory(operation, _currentOperation);
+      await _saveToHistory(operation, 'Đang dọn dẹp đối tượng...');
     } catch (e) {
       _setError('Lỗi khi dọn dẹp ảnh: $e');
     }
@@ -247,6 +249,7 @@ class ImageEditProvider extends ChangeNotifier {
   // Clear error
   void clearError() {
     _errorMessage = '';
+    _currentOperation = null;
     _setState(ProcessingState.idle);
   }
 
@@ -255,7 +258,7 @@ class ImageEditProvider extends ChangeNotifier {
     _originalImage = null;
     _processedImage = null;
     _errorMessage = '';
-    _currentOperation = '';
+    _currentOperation = null;
     _progress = 0.0;
     _setState(ProcessingState.idle);
   }
@@ -267,6 +270,7 @@ class ImageEditProvider extends ChangeNotifier {
 
   void _setError(String message) {
     _errorMessage = message;
+    _currentOperation = null; // Clear current operation when error occurs
     _setState(ProcessingState.error);
   }
 
