@@ -33,7 +33,7 @@ class _ResultWidgetState extends State<ResultWidget> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 120), // Add bottom padding to avoid navigation
       child: Column(
         children: [
           const SizedBox(height: 32),

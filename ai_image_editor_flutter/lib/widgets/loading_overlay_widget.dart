@@ -72,6 +72,7 @@ class _LoadingOverlayWidgetState extends State<LoadingOverlayWidget>
 
     return Material(
       color: Colors.transparent,
+      elevation: 100, // High elevation to ensure it's above navigation
       child: AnimatedOpacity(
         opacity: widget.isVisible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 300),
