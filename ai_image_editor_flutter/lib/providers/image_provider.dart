@@ -24,6 +24,9 @@ class ImageEditProvider extends ChangeNotifier {
   String _errorMessage = '';
   String? _currentOperation;
   double _progress = 0.0;
+  
+  // Callback function for when image is picked successfully
+  Function(File)? _onImagePicked;
 
   // Getters
   File? get originalImage => _originalImage;
@@ -32,6 +35,11 @@ class ImageEditProvider extends ChangeNotifier {
   String get errorMessage => _errorMessage;
   String? get currentOperation => _currentOperation;
   double get progress => _progress;
+  
+  // Set callback for image picked
+  void setOnImagePickedCallback(Function(File)? callback) {
+    _onImagePicked = callback;
+  }
 
   // Pick image from gallery or camera
   Future<void> pickImage(ImageSource source) async {
@@ -49,6 +57,11 @@ class ImageEditProvider extends ChangeNotifier {
         _originalImage = File(pickedFile.path);
         _processedImage = null;
         _setState(ProcessingState.idle);
+        
+        // Call the callback if it's set
+        if (_onImagePicked != null) {
+          _onImagePicked!(_originalImage!);
+        }
       } else {
         _setState(ProcessingState.idle);
       }

@@ -5,8 +5,63 @@ import '../providers/image_provider.dart';
 import '../screens/editor_screen.dart';
 import 'text_to_image_widget.dart';
 
-class ImageUploadWidget extends StatelessWidget {
+class ImageUploadWidget extends StatefulWidget {
   const ImageUploadWidget({super.key});
+
+  @override
+  State<ImageUploadWidget> createState() => _ImageUploadWidgetState();
+}
+
+class _ImageUploadWidgetState extends State<ImageUploadWidget> {
+  
+  @override
+  void initState() {
+    super.initState();
+    // Set up callback for when image is picked
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<ImageEditProvider>(context, listen: false);
+      provider.setOnImagePickedCallback((file) {
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => EditorScreen(
+                originalImage: file,
+              ),
+            ),
+          );
+        }
+      });
+    });
+  }
+  
+  @override
+  void dispose() {
+    // Clear callback when widget is disposed
+    try {
+      final provider = Provider.of<ImageEditProvider>(context, listen: false);
+      provider.setOnImagePickedCallback(null);
+    } catch (e) {
+      // Handle case where provider is no longer available
+    }
+    super.dispose();
+  }
+  
+  Future<void> _handleImageSelection(ImageSource source) async {
+    final provider = Provider.of<ImageEditProvider>(context, listen: false);
+    
+    try {
+      await provider.pickImage(source);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi chọn ảnh: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +189,7 @@ class ImageUploadWidget extends StatelessWidget {
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(24),
               child: InkWell(
-                onTap: () => _showImageSourceDialog(context, provider),
+                onTap: () => _showImageSourceDialog(context),
                 borderRadius: BorderRadius.circular(24),
                 child: Container(
                   padding: const EdgeInsets.all(40),
@@ -348,7 +403,7 @@ class ImageUploadWidget extends StatelessWidget {
     );
   }
 
-  void _showImageSourceDialog(BuildContext context, ImageEditProvider provider) {
+  void _showImageSourceDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -374,19 +429,9 @@ class ImageUploadWidget extends StatelessWidget {
                     context: context,
                     icon: Icons.photo_library,
                     title: 'Thư viện',
-                    onTap: () async {
+                    onTap: () {
                       Navigator.pop(context);
-                      await provider.pickImage(ImageSource.gallery);
-                      // Navigate to editor screen if image was selected
-                      if (provider.originalImage != null) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => EditorScreen(
-                              originalImage: provider.originalImage!,
-                            ),
-                          ),
-                        );
-                      }
+                      _handleImageSelection(ImageSource.gallery);
                     },
                   ),
                 ),
@@ -396,19 +441,9 @@ class ImageUploadWidget extends StatelessWidget {
                     context: context,
                     icon: Icons.camera_alt,
                     title: 'Camera',
-                    onTap: () async {
+                    onTap: () {
                       Navigator.pop(context);
-                      await provider.pickImage(ImageSource.camera);
-                      // Navigate to editor screen if image was selected
-                      if (provider.originalImage != null) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => EditorScreen(
-                              originalImage: provider.originalImage!,
-                            ),
-                          ),
-                        );
-                      }
+                      _handleImageSelection(ImageSource.camera);
                     },
                   ),
                 ),
