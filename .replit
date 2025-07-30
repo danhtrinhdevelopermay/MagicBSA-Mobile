@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "bash", "web", "swift-5.8"]
+modules = ["nodejs-20", "bash", "web", "swift-5.8", "flutter"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 

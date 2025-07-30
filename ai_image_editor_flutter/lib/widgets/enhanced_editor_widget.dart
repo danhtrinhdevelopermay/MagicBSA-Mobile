@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../providers/image_provider.dart';
 import '../services/clipdrop_service.dart';
 import 'mask_drawing_screen.dart';
+import '../screens/object_removal_screen.dart';
 
 enum InputType {
   mask,
@@ -624,17 +625,8 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
   void _showMaskDialog(Feature feature) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => MaskDrawingScreen(
-          originalImage: widget.originalImage,
-          onMaskCreated: (maskFile) {
-            Navigator.pop(context);
-            // Process cleanup with mask
-            final provider = Provider.of<ImageEditProvider>(context, listen: false);
-            provider.processImageWithMask(
-              ProcessingOperation.cleanup,
-              maskFile: maskFile,
-            );
-          },
+        builder: (context) => ObjectRemovalScreen(
+          imageFile: widget.originalImage,
         ),
       ),
     );
