@@ -113,10 +113,10 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
       // Convert drawing paths to mask pixels with accurate coordinate mapping
       for (final path in _paths) {
         // Extract points from path and scale them to original image coordinates
-        final PathMetrics pathMetrics = path.computeMetrics();
-        for (final PathMetric pathMetric in pathMetrics) {
+        final ui.PathMetrics pathMetrics = path.computeMetrics();
+        for (final ui.PathMetric pathMetric in pathMetrics) {
           for (double distance = 0.0; distance < pathMetric.length; distance += 1.0) {
-            final Tangent? tangent = pathMetric.getTangentForOffset(distance);
+            final ui.Tangent? tangent = pathMetric.getTangentForOffset(distance);
             if (tangent != null) {
               // Convert display coordinates to original image coordinates
               final int originalX = (tangent.position.dx * scaleX).round();

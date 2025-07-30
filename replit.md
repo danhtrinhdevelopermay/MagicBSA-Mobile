@@ -48,6 +48,10 @@ Focus on practical, working solutions over theoretical explanations.
   - Added conditional rendering to prevent widgets from rendering without required data
   - Fixed type mismatch error with progress parameter (Object to String conversion)
   - Resolved syntax error with missing array closing bracket in navigation widget
+  - **CRITICAL FIX (July 30, 2025)**: Fixed Flutter UI type errors in mask_drawing_screen.dart:
+    * PathMetrics, PathMetric, and Tangent types properly prefixed with ui. namespace
+    * Resolved "isn't a type" compilation errors that prevented APK build on GitHub Actions
+    * Build process now completes successfully without UI type conflicts
   - Updated ResultWidget to support both File and Uint8List for originalImage parameter
   - Fixed history_screen.dart type mismatch when passing originalImageData to ResultWidget
   - Removed duplicate main_screen_fixed.dart file causing analysis conflicts
