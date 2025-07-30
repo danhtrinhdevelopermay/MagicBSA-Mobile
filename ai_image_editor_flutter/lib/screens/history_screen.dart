@@ -459,7 +459,7 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
         context,
         MaterialPageRoute(
           builder: (context) => ResultWidget(
-            originalImage: item.originalImageData!,
+            originalImageData: item.originalImageData!,
             processedImage: item.processedImageData,
             onStartOver: () => Navigator.pop(context),
           ),

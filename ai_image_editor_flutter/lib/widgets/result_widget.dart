@@ -6,12 +6,14 @@ import 'package:path_provider/path_provider.dart';
 
 class ResultWidget extends StatefulWidget {
   final File? originalImage; // Can be null for text-to-image operations
+  final Uint8List? originalImageData; // Alternative to originalImage for Uint8List data
   final Uint8List processedImage;
   final VoidCallback onStartOver;
 
   const ResultWidget({
     super.key,
     this.originalImage, // Optional for text-to-image
+    this.originalImageData, // Alternative for Uint8List
     required this.processedImage,
     required this.onStartOver,
   });
@@ -27,7 +29,7 @@ class _ResultWidgetState extends State<ResultWidget> {
   void initState() {
     super.initState();
     // Default to comparison view only if we have an original image
-    _showComparison = widget.originalImage != null;
+    _showComparison = widget.originalImage != null || widget.originalImageData != null;
   }
 
   @override
@@ -102,7 +104,7 @@ class _ResultWidgetState extends State<ResultWidget> {
           const SizedBox(height: 24),
           
           // Toggle comparison controls
-          if (widget.originalImage != null)
+          if (widget.originalImage != null || widget.originalImageData != null)
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -190,7 +192,7 @@ class _ResultWidgetState extends State<ResultWidget> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: (widget.originalImage != null && _showComparison)
+              child: ((widget.originalImage != null || widget.originalImageData != null) && _showComparison)
                   ? _buildComparisonView()
                   : _buildSingleView(),
             ),
@@ -460,10 +462,15 @@ class _ResultWidgetState extends State<ResultWidget> {
           child: Row(
             children: [
               Expanded(
-                child: Image.file(
-                  widget.originalImage!, // We only call this when originalImage is not null
-                  fit: BoxFit.cover,
-                ),
+                child: widget.originalImage != null
+                    ? Image.file(
+                        widget.originalImage!,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.memory(
+                        widget.originalImageData!,
+                        fit: BoxFit.cover,
+                      ),
               ),
               Container(width: 1, color: const Color(0xFFe2e8f0)),
               Expanded(
