@@ -1,8 +1,84 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../models/history_item.dart';
+import '../services/history_service.dart';
+import '../widgets/result_widget.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
+
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateMixin {
+  late TabController _tabController;
+  List<HistoryItem> _allHistory = [];
+  List<HistoryItem> _filteredHistory = [];
+  bool _isLoading = true;
+  String _selectedFilter = 'Tất cả';
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _loadHistory();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      List<HistoryItem> history = await HistoryService.getHistory();
+      setState(() {
+        _allHistory = history;
+        _filteredHistory = history;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi tải lịch sử: $e')),
+        );
+      }
+    }
+  }
+
+  void _filterHistory(String filter) {
+    setState(() {
+      _selectedFilter = filter;
+      if (filter == 'Tất cả') {
+        _filteredHistory = _allHistory;
+      } else {
+        String operationKey = _getOperationKey(filter);
+        _filteredHistory = _allHistory.where((item) => item.operation == operationKey).toList();
+      }
+    });
+  }
+
+  String _getOperationKey(String displayName) {
+    switch (displayName) {
+      case 'Xóa nền':
+        return 'removeBackground';
+      case 'Xóa text':
+        return 'removeText';
+      case 'Dọn dẹp':
+        return 'cleanup';
+      default:
+        return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +176,8 @@ class HistoryScreen extends StatelessWidget {
   }
 
   Widget _buildFilterTabs() {
+    List<String> filters = ['Tất cả', 'Xóa nền', 'Xóa text', 'Dọn dẹp'];
+    
     return Container(
       height: 40,
       decoration: BoxDecoration(
@@ -107,38 +185,36 @@ class HistoryScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
-        children: [
-          _buildFilterTab('Tất cả', true),
-          _buildFilterTab('Hôm nay', false),
-          _buildFilterTab('Tuần này', false),
-          _buildFilterTab('Tháng này', false),
-        ],
+        children: filters.map((filter) => _buildFilterTab(filter, _selectedFilter == filter)).toList(),
       ),
     );
   }
 
   Widget _buildFilterTab(String title, bool isActive) {
     return Expanded(
-      child: Container(
-        margin: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: isActive ? [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
-            ),
-          ] : null,
-        ),
-        child: Center(
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              color: isActive ? const Color(0xFF6366f1) : const Color(0xFF64748b),
+      child: GestureDetector(
+        onTap: () => _filterHistory(title),
+        child: Container(
+          margin: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: isActive ? [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
+              ),
+            ] : null,
+          ),
+          child: Center(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                color: isActive ? const Color(0xFF6366f1) : const Color(0xFF64748b),
+              ),
             ),
           ),
         ),
@@ -147,48 +223,29 @@ class HistoryScreen extends StatelessWidget {
   }
 
   Widget _buildHistoryList() {
-    // Sample history data
-    final historyItems = [
-      {
-        'title': 'Xóa nền ảnh chân dung',
-        'time': '2 phút trước',
-        'type': 'background_removal',
-        'thumbnail': 'https://via.placeholder.com/60x60/6366f1/ffffff?text=BG',
-      },
-      {
-        'title': 'Chỉnh sửa ảnh sản phẩm',
-        'time': '15 phút trước',
-        'type': 'cleanup',
-        'thumbnail': 'https://via.placeholder.com/60x60/8b5cf6/ffffff?text=CL',
-      },
-      {
-        'title': 'Tạo ảnh từ văn bản',
-        'time': '1 giờ trước',
-        'type': 'text_to_image',
-        'thumbnail': 'https://via.placeholder.com/60x60/ec4899/ffffff?text=TI',
-      },
-      {
-        'title': 'Mở rộng ảnh',
-        'time': 'Hôm qua',
-        'type': 'uncrop',
-        'thumbnail': 'https://via.placeholder.com/60x60/10b981/ffffff?text=UC',
-      },
-    ];
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366f1)),
+        ),
+      );
+    }
 
-    if (historyItems.isEmpty) {
+    if (_filteredHistory.isEmpty) {
       return _buildEmptyState();
     }
 
     return ListView.builder(
-      itemCount: historyItems.length,
+      padding: const EdgeInsets.only(bottom: 120), // Add padding for navigation
+      itemCount: _filteredHistory.length,
       itemBuilder: (context, index) {
-        final item = historyItems[index];
+        final item = _filteredHistory[index];
         return _buildHistoryItem(item);
       },
     );
   }
 
-  Widget _buildHistoryItem(Map<String, String> item) {
+  Widget _buildHistoryItem(HistoryItem item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -203,72 +260,95 @@ class HistoryScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Thumbnail
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              gradient: _getGradientForType(item['type']!),
+      child: GestureDetector(
+        onTap: () => _viewHistoryItem(item),
+        child: Row(
+          children: [
+            // Thumbnail - show actual processed image
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  item.processedImageData,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: _getGradientForType(item.operation).colors.first,
+                      child: Icon(
+                        _getIconForType(item.operation),
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
-            child: Icon(
-              _getIconForType(item['type']!),
-              color: Colors.white,
-              size: 24,
+            const SizedBox(width: 12),
+            
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1e293b),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatTime(item.createdAt),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748b),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          
-          // Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            
+            // Action buttons
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  item['title']!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1e293b),
+                IconButton(
+                  onPressed: () => _downloadHistoryItem(item),
+                  icon: const Icon(
+                    Icons.download_outlined,
+                    size: 20,
+                    color: Color(0xFF64748b),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  item['time']!,
-                  style: const TextStyle(
-                    fontSize: 12,
+                IconButton(
+                  onPressed: () => _shareHistoryItem(item),
+                  icon: const Icon(
+                    Icons.share_outlined,
+                    size: 20,
                     color: Color(0xFF64748b),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _deleteHistoryItem(item),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    size: 20,
+                    color: Color(0xFFef4444),
                   ),
                 ),
               ],
             ),
-          ),
-          
-          // Action buttons
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.download_outlined,
-                  size: 20,
-                  color: Color(0xFF64748b),
-                ),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.share_outlined,
-                  size: 20,
-                  color: Color(0xFF64748b),
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -351,6 +431,108 @@ class HistoryScreen extends StatelessWidget {
         return Icons.crop_free;
       default:
         return Icons.image;
+    }
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Vừa xong';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} phút trước';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} giờ trước';
+    } else if (difference.inDays == 1) {
+      return 'Hôm qua';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} ngày trước';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
+  }
+
+  void _viewHistoryItem(HistoryItem item) {
+    if (item.originalImageData != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ResultWidget(
+            originalImage: item.originalImageData!,
+            processedImage: item.processedImageData,
+            onStartOver: () => Navigator.pop(context),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _downloadHistoryItem(HistoryItem item) async {
+    try {
+      await HistoryService.downloadHistoryItem(item);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã tải ảnh về thư mục Downloads')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi tải ảnh: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _shareHistoryItem(HistoryItem item) async {
+    try {
+      await HistoryService.shareHistoryItem(item);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi chia sẻ: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteHistoryItem(HistoryItem item) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xóa ảnh khỏi lịch sử'),
+        content: const Text('Bạn có chắc muốn xóa ảnh này khỏi lịch sử không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      try {
+        await HistoryService.deleteHistoryItem(item.id);
+        await _loadHistory(); // Reload history
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã xóa ảnh khỏi lịch sử')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi khi xóa: $e')),
+          );
+        }
+      }
     }
   }
 }

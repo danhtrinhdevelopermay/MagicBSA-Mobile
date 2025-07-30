@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/clipdrop_service.dart';
+import '../services/history_service.dart';
+import '../models/history_item.dart';
 
 enum ProcessingState {
   idle,
@@ -133,6 +135,9 @@ class ImageEditProvider extends ChangeNotifier {
       _processedImage = result;
       _setState(ProcessingState.completed);
       _progress = 1.0;
+      
+      // Save to history after successful processing
+      await _saveToHistory(operation, operationText);
     } catch (e) {
       _setError('Lỗi khi xử lý ảnh: $e');
     }
@@ -172,6 +177,9 @@ class ImageEditProvider extends ChangeNotifier {
       _processedImage = result;
       _setState(ProcessingState.completed);
       _progress = 1.0;
+      
+      // Save to history after successful processing
+      await _saveToHistory(operation, _currentOperation);
     } catch (e) {
       _setError('Lỗi khi dọn dẹp ảnh: $e');
     }
@@ -285,5 +293,59 @@ class ImageEditProvider extends ChangeNotifier {
         notifyListeners();
       }
     });
+  }
+
+  /// Save processed image to history
+  Future<void> _saveToHistory(ProcessingOperation operation, String operationText) async {
+    if (_processedImage == null) return;
+    
+    try {
+      // Get operation name for display
+      String operationName = _getOperationDisplayName(operation);
+      
+      // Create history item
+      HistoryItem historyItem = HistoryItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: operationName,
+        operation: operation.toString().split('.').last,
+        createdAt: DateTime.now(),
+        originalImagePath: _originalImage?.path,
+        originalImageData: _originalImage != null ? await _originalImage!.readAsBytes() : null,
+        processedImageData: _processedImage!,
+        processingTime: 3.2, // Mock processing time
+        qualityScore: 98, // Mock quality score
+      );
+      
+      // Save to history service
+      await HistoryService.addHistoryItem(historyItem);
+      
+    } catch (e) {
+      print('Error saving to history: $e');
+      // Don't show error to user, just log it
+    }
+  }
+
+  /// Get display name for operation
+  String _getOperationDisplayName(ProcessingOperation operation) {
+    switch (operation) {
+      case ProcessingOperation.removeBackground:
+        return 'Xóa background';
+      case ProcessingOperation.removeText:
+        return 'Xóa text';
+      case ProcessingOperation.cleanup:
+        return 'Dọn dẹp đối tượng';
+      case ProcessingOperation.uncrop:
+        return 'Mở rộng ảnh';
+      case ProcessingOperation.reimagine:
+        return 'Tái tạo ảnh';
+      case ProcessingOperation.textToImage:
+        return 'Tạo ảnh từ text';
+      case ProcessingOperation.replaceBackground:
+        return 'Thay background';
+      case ProcessingOperation.imageUpscaling:
+        return 'Nâng cấp độ phân giải';
+      default:
+        return 'Xử lý ảnh';
+    }
   }
 }
