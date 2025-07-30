@@ -350,6 +350,12 @@ class ProfileScreen extends StatelessWidget {
         'onTap': () {},
       },
       {
+        'icon': Icons.bug_report_outlined,
+        'title': 'Debug OneSignal',
+        'subtitle': 'Kiểm tra trạng thái push notifications',
+        'onTap': () => _debugOneSignal(context),
+      },
+      {
         'icon': Icons.info_outline,
         'title': 'Giới thiệu',
         'subtitle': 'Phiên bản 1.0.0',
@@ -494,6 +500,59 @@ class ProfileScreen extends StatelessWidget {
                 fontSize: 12,
                 color: Color(0xFF64748b),
               ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _debugOneSignal(BuildContext context) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Đang kiểm tra OneSignal...'),
+          ],
+        ),
+      ),
+    );
+
+    // Debug OneSignal
+    await OneSignalService.debugStatus();
+    
+    // Close loading dialog
+    Navigator.of(context).pop();
+    
+    // Show result dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Debug OneSignal'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Kiểm tra console logs để xem chi tiết.'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await OneSignalService.promptForPermission();
+              },
+              child: const Text('Yêu cầu Permission lại'),
             ),
           ],
         ),

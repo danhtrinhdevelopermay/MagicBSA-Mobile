@@ -29,6 +29,15 @@ Focus on practical, working solutions over theoretical explanations.
   - Integrated custom gradient navigation icons: Home (sparkle), History (clock), Premium (crown), Profile (person)
   - Enhanced icon animations with rotation, scale transforms and radial gradient backgrounds
   - Applied ColorFilter for icon color changes: white when active, purple when inactive
+✓ **ENHANCED ONESIGNAL DEBUG SYSTEM** - Comprehensive debugging solution for push notification issues:
+  - Added detailed logging with emoji indicators for better visual tracking
+  - Implemented subscription change observer to monitor push token changes  
+  - Enhanced initialization with proper delays and permission checking
+  - Added debug button in ProfileScreen for real-time OneSignal status checking
+  - Created comprehensive ONESIGNAL_DEBUG_GUIDE.md with troubleshooting steps
+  - Added methods: debugStatus(), promptForPermission(), _onSubscriptionChange()
+  - Console logs now show User ID, Push Token, Permission status, and OptedIn state
+  - Debug system helps identify why push notifications aren't working from OneSignal dashboard
 ✓ **ADDED IMAGE UPSCALING FEATURE** - Successfully integrated Image Upscaling using ClipDrop API:
   - Added ProcessingOperation.imageUpscaling and InputType.upscaling enums
   - Implemented comprehensive upscaling dialog with targetWidth/targetHeight controls (1-4096px)

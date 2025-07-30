@@ -14,14 +14,26 @@ class OneSignalService {
   /// Khởi tạo OneSignal service
   static Future<void> initialize() async {
     try {
-      // Debug mode - remove trong production
+      print("🔄 Bắt đầu khởi tạo OneSignal...");
+      
+      // Debug mode - enable để kiểm tra chi tiết
       OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
       
       // Khởi tạo OneSignal với App ID
+      print("📱 Khởi tạo OneSignal với App ID: $_oneSignalAppId");
       OneSignal.initialize(_oneSignalAppId);
       
+      // Đợi một chút để OneSignal khởi tạo hoàn tất
+      await Future.delayed(const Duration(seconds: 2));
+      
+      // Kiểm tra trạng thái permission hiện tại
+      final currentPermission = await OneSignal.Notifications.permission;
+      print("🔔 Permission hiện tại: $currentPermission");
+      
       // Yêu cầu permission cho notifications
-      await OneSignal.Notifications.requestPermission(true);
+      print("🔔 Yêu cầu permission notifications...");
+      final granted = await OneSignal.Notifications.requestPermission(true);
+      print("🔔 Permission được cấp: $granted");
       
       // Lắng nghe khi nhận notification trong foreground
       OneSignal.Notifications.addForegroundWillDisplayListener(_onForegroundWillDisplay);
@@ -32,15 +44,31 @@ class OneSignalService {
       // Lắng nghe khi permission thay đổi
       OneSignal.Notifications.addPermissionObserver(_onPermissionChange);
       
-      // Lưu User ID để sử dụng sau
+      // Lắng nghe khi subscription thay đổi
+      OneSignal.User.pushSubscription.addObserver(_onSubscriptionChange);
+      
+      // Đợi và lấy User ID
+      await Future.delayed(const Duration(seconds: 1));
       final userId = OneSignal.User.pushSubscription.id;
+      final pushToken = OneSignal.User.pushSubscription.token;
+      
+      print("👤 OneSignal User ID: $userId");
+      print("🔑 Push Token: $pushToken");
+      
       if (userId != null) {
         await _saveUserId(userId);
       }
       
-      print("OneSignal đã được khởi tạo thành công");
+      // Đặt tags mặc định để dễ targeting
+      await sendTags({
+        'app_version': '1.0.0',
+        'platform': 'android',
+        'language': 'vi'
+      });
+      
+      print("✅ OneSignal đã được khởi tạo thành công");
     } catch (e) {
-      print("Lỗi khởi tạo OneSignal: $e");
+      print("❌ Lỗi khởi tạo OneSignal: $e");
     }
   }
   
@@ -67,7 +95,22 @@ class OneSignalService {
   
   /// Xử lý khi notification permission thay đổi
   static void _onPermissionChange(bool granted) {
-    print("Notification permission: ${granted ? 'Cho phép' : 'Từ chối'}");
+    print("🔔 Notification permission: ${granted ? 'Cho phép' : 'Từ chối'}");
+  }
+  
+  /// Xử lý khi push subscription thay đổi
+  static void _onSubscriptionChange(OSPushSubscriptionChangedState state) {
+    print("📱 Push subscription changed:");
+    print("  Previous ID: ${state.previous.id}");
+    print("  Current ID: ${state.current.id}");
+    print("  Previous Token: ${state.previous.token}");
+    print("  Current Token: ${state.current.token}");
+    print("  OptedIn: ${state.current.optedIn}");
+    
+    // Lưu user ID mới nếu có
+    if (state.current.id != null) {
+      _saveUserId(state.current.id!);
+    }
   }
   
   /// Navigation đến màn hình cụ thể từ notification
@@ -165,6 +208,54 @@ class OneSignalService {
     if (userId != null) {
       print("Gửi test notification đến User ID: $userId");
       // Thực tế cần sử dụng OneSignal REST API để gửi notification
+    }
+  }
+  
+  /// Debug: Kiểm tra trạng thái OneSignal hiện tại
+  static Future<void> debugStatus() async {
+    try {
+      print("=== ONESIGNAL DEBUG STATUS ===");
+      
+      // Kiểm tra permission
+      final permission = await OneSignal.Notifications.permission;
+      print("🔔 Notification Permission: $permission");
+      
+      // Kiểm tra User ID và Token
+      final userId = OneSignal.User.pushSubscription.id;
+      final pushToken = OneSignal.User.pushSubscription.token;
+      final optedIn = OneSignal.User.pushSubscription.optedIn;
+      
+      print("👤 User ID: $userId");
+      print("🔑 Push Token: $pushToken");
+      print("✅ Opted In: $optedIn");
+      
+      // Kiểm tra saved User ID
+      final savedUserId = await getUserId();
+      print("💾 Saved User ID: $savedUserId");
+      
+      // Kiểm tra tags
+      print("🏷️ Current Tags: Checking...");
+      
+      print("=== END DEBUG STATUS ===");
+    } catch (e) {
+      print("❌ Debug Status Error: $e");
+    }
+  }
+  
+  /// Prompt user để cấp permission lại
+  static Future<void> promptForPermission() async {
+    try {
+      print("🔔 Yêu cầu permission notifications lại...");
+      final granted = await OneSignal.Notifications.requestPermission(true);
+      print("🔔 Permission result: $granted");
+      
+      if (granted) {
+        // Đợi và kiểm tra subscription
+        await Future.delayed(const Duration(seconds: 2));
+        await debugStatus();
+      }
+    } catch (e) {
+      print("❌ Lỗi yêu cầu permission: $e");
     }
   }
 }

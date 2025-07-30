@@ -18,6 +18,10 @@ void main() async {
   // Initialize OneSignal push notifications
   await OneSignalService.initialize();
   
+  // Debug OneSignal status
+  await Future.delayed(const Duration(seconds: 3));
+  await OneSignalService.debugStatus();
+  
   // Set transparent system bars with proper edge-to-edge
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
