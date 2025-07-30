@@ -178,6 +178,9 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('EnhancedEditorWidget build called - image path: ${widget.originalImage.path}');
+    debugPrint('Categories count: ${_categories.length}');
+    
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -198,14 +201,21 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
           ),
           const SizedBox(height: 16),
           
-          Expanded(
+          // Fixed height container for PageView
+          SizedBox(
+            height: 400, // Fixed height instead of Expanded
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: (index) => setState(() => _currentPage = index),
               itemCount: _categories.length,
-              itemBuilder: (context, index) => _buildCategoryPage(_categories[index]),
+              itemBuilder: (context, index) {
+                debugPrint('Building category page $index: ${_categories[index].title}');
+                return _buildCategoryPage(_categories[index]);
+              },
             ),
           ),
+          
+          const SizedBox(height: 16),
           
           // Page indicator
           _buildPageIndicator(),
@@ -239,6 +249,8 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
   }
 
   Widget _buildCategoryPage(FeatureCategory category) {
+    debugPrint('Building category: ${category.title} with ${category.features.length} features');
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -270,16 +282,18 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
         ),
         const SizedBox(height: 16),
         
-        // Features grid
-        Expanded(
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 1,
-              childAspectRatio: 4,
-              mainAxisSpacing: 12,
-            ),
+        // Features list - Fixed height instead of Expanded
+        SizedBox(
+          height: 320, // Fixed height for features list
+          child: ListView.builder(
             itemCount: category.features.length,
-            itemBuilder: (context, index) => _buildFeatureCard(category.features[index]),
+            itemBuilder: (context, index) {
+              debugPrint('Building feature card: ${category.features[index].title}');
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildFeatureCard(category.features[index]),
+              );
+            },
           ),
         ),
       ],
@@ -288,6 +302,7 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
 
   Widget _buildFeatureCard(Feature feature) {
     return Container(
+      height: 80, // Fixed height for consistent spacing
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
