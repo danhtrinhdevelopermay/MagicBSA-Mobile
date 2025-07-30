@@ -372,19 +372,11 @@ class _MainScreenState extends State<MainScreen> {
                   ],
                 )
               : null,
-          child: ColorFiltered(
-            colorFilter: isActive
-                ? const ColorFilter.mode(Colors.white, BlendMode.srcIn)
-                : ColorFilter.mode(
-                    const Color(0xFF6366f1).withOpacity(0.7), 
-                    BlendMode.srcIn,
-                  ),
-            child: Image.asset(
-              iconPath,
-              width: isActive ? 32 : 28,
-              height: isActive ? 32 : 28,
-              fit: BoxFit.contain,
-            ),
+          child: Image.asset(
+            iconPath,
+            width: isActive ? 32 : 28,
+            height: isActive ? 32 : 28,
+            fit: BoxFit.contain,
           ),
         ),
       ),
