@@ -345,6 +345,7 @@ class _MainScreenState extends State<MainScreen> {
         },
         child: Container(
           key: ValueKey('$index-$isActive'),
+          margin: const EdgeInsets.only(top: 8), // Add top margin to push circle down
           padding: const EdgeInsets.all(4),
           decoration: isActive
               ? BoxDecoration(
