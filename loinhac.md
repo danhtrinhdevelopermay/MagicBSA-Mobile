@@ -1,2 +1,2 @@
-- Khi có thay đổi code thì gửi kèm theo lệnh push git thủ công.
-- Đảm bảo không ảnh hưởng đến việc build apk khi thay đổi hoặc phát triển ứng dụng 
+- Khi có thay đổi code thì gửi kèm theo lệnh push git thủ công, push toàn bộ code trong thư mục gốc không cần cd.
+- Đảm bảo không ảnh hưởng đến việc build apk khi thay đổi hoặc phát triển ứng dụng
