@@ -25,6 +25,7 @@ Focus on practical, working solutions over theoretical explanations.
   - Applied 32px border radius with modern gradient (white opacity 0.3 to 0.15)
   - Improved accessibility with larger touch targets and smooth curve animations
   - Navigation now follows Material 3 principles with contemporary visual hierarchy
+  - Fixed navigation height issues: container height increased to 95px, CurvedNavigationBar height to 75px
 ✓ **ADDED IMAGE UPSCALING FEATURE** - Successfully integrated Image Upscaling using ClipDrop API:
   - Added ProcessingOperation.imageUpscaling and InputType.upscaling enums
   - Implemented comprehensive upscaling dialog with targetWidth/targetHeight controls (1-4096px)

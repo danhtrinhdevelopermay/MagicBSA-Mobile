@@ -115,7 +115,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
               
               // Bottom padding for curved navigation
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
             ],
           ),
         );
@@ -256,6 +256,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildModernBottomNavigation() {
     return Container(
+      height: 95, // Increased total container height
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
@@ -297,7 +298,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
             child: CurvedNavigationBar(
               index: _currentIndex,
-              height: 70,
+              height: 75,
               items: [
                 _buildNavIcon(Icons.home_rounded, Icons.home_outlined, 0),
                 _buildNavIcon(Icons.history_rounded, Icons.history_outlined, 1),
