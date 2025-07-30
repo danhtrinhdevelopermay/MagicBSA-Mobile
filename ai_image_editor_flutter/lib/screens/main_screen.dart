@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import '../providers/image_provider.dart';
 import '../widgets/image_upload_widget.dart';
 import '../widgets/enhanced_editor_widget.dart';
@@ -80,12 +82,6 @@ class _MainScreenState extends State<MainScreen> {
                 ],
               ),
               
-              // Bottom Navigation
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: _buildBottomNavigation(),
-              ),
-              
               // Full-screen loading overlay
               if (provider.state == ProcessingState.processing)
                 Positioned.fill(
@@ -96,6 +92,7 @@ class _MainScreenState extends State<MainScreen> {
                 ),
             ],
           ),
+          bottomNavigationBar: _buildModernBottomNavigation(),
         );
       },
     );
@@ -117,8 +114,8 @@ class _MainScreenState extends State<MainScreen> {
                 child: _buildMainContent(context, provider),
               ),
               
-              // Bottom padding for navigation
-              const SizedBox(height: 100),
+              // Bottom padding for curved navigation
+              const SizedBox(height: 20),
             ],
           ),
         );
@@ -257,244 +254,118 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  Widget _buildBottomNavigation() {
+  Widget _buildModernBottomNavigation() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.white,
-            Colors.white.withOpacity(0.95),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.black.withOpacity(0.05),
-          width: 1,
-        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF000000).withOpacity(0.1),
-            blurRadius: 30,
-            offset: const Offset(0, 8),
-            spreadRadius: -5,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 32,
+            offset: const Offset(0, -8),
+            spreadRadius: 0,
           ),
           BoxShadow(
-            color: const Color(0xFF6366f1).withOpacity(0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF6366f1).withOpacity(0.12),
+            blurRadius: 24,
+            offset: const Offset(0, -4),
             spreadRadius: -2,
-          ),
-          BoxShadow(
-            color: Colors.white.withOpacity(0.8),
-            blurRadius: 1,
-            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          height: 68,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildNavItem(
-                iconPath: 'assets/icons/home_icon.png',
-                label: 'Trang chủ',
-                isActive: _currentIndex == 0,
-                onTap: () => _onTabTapped(0),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white.withOpacity(0.3),
+                  Colors.white.withOpacity(0.2),
+                  Colors.white.withOpacity(0.15),
+                ],
+                stops: const [0.0, 0.5, 1.0],
               ),
-              _buildNavItem(
-                iconPath: 'assets/icons/history_icon.png',
-                label: 'Lịch sử',
-                isActive: _currentIndex == 1,
-                onTap: () => _onTabTapped(1),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withOpacity(0.4),
+                  width: 1.5,
+                ),
               ),
-              _buildNavItem(
-                iconPath: 'assets/icons/premium_icon.png',
-                label: 'Premium',
-                isActive: _currentIndex == 2,
-                onTap: () => _onTabTapped(2),
-              ),
-              _buildNavItem(
-                iconPath: 'assets/icons/profile_icon.png',
-                label: 'Hồ sơ',
-                isActive: _currentIndex == 3,
-                onTap: () => _onTabTapped(3),
-              ),
-            ],
+            ),
+            child: CurvedNavigationBar(
+              index: _currentIndex,
+              height: 70,
+              items: [
+                _buildNavIcon(Icons.home_rounded, Icons.home_outlined, 0),
+                _buildNavIcon(Icons.history_rounded, Icons.history_outlined, 1),
+                _buildNavIcon(Icons.star_rounded, Icons.star_border_rounded, 2),
+                _buildNavIcon(Icons.person_rounded, Icons.person_outline_rounded, 3),
+              ],
+              color: Colors.transparent,
+              buttonBackgroundColor: const Color(0xFF6366f1),
+              backgroundColor: Colors.transparent,
+              animationCurve: Curves.easeInOutCubic,
+              animationDuration: const Duration(milliseconds: 700),
+              letIndexChange: (index) => true,
+              onTap: _onTabTapped,
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNavItem({
-    required String iconPath,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOutCubic,
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-        decoration: BoxDecoration(
-          gradient: isActive
-              ? LinearGradient(
-                  colors: [
-                    const Color(0xFF6366f1).withOpacity(0.15),
-                    const Color(0xFF8b5cf6).withOpacity(0.1),
+  Widget _buildNavIcon(IconData activeIcon, IconData inactiveIcon, int index) {
+    final isActive = _currentIndex == index;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutBack,
+      transform: Matrix4.identity()
+        ..scale(isActive ? 1.1 : 1.0)
+        ..rotateZ(isActive ? 0.1 : 0.0),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        switchInCurve: Curves.elasticOut,
+        switchOutCurve: Curves.easeInBack,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: animation,
+              child: child,
+            ),
+          );
+        },
+        child: Container(
+          key: ValueKey('$index-$isActive'),
+          padding: const EdgeInsets.all(2),
+          decoration: isActive
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                      spreadRadius: 1,
+                    ),
                   ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
                 )
               : null,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF6366f1).withOpacity(0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                    spreadRadius: 0,
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Icon Container with enhanced animations
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.elasticOut,
-              transform: Matrix4.identity()
-                ..scale(isActive ? 1.15 : 1.0)
-                ..translate(0.0, isActive ? -2.0 : 0.0),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                switchInCurve: Curves.easeInOutBack,
-                switchOutCurve: Curves.easeInOutBack,
-                transitionBuilder: (child, animation) {
-                  return ScaleTransition(
-                    scale: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.3),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: child,
-                    ),
-                  );
-                },
-                child: Container(
-                  key: ValueKey(isActive),
-                  width: 32,
-                  height: 32,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    gradient: isActive
-                        ? LinearGradient(
-                            colors: [
-                              Colors.white.withOpacity(0.9),
-                              Colors.white.withOpacity(0.7),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: isActive
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFF6366f1).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 200),
-                    opacity: isActive ? 1.0 : 0.6,
-                    child: Image.asset(
-                      iconPath,
-                      width: 24,
-                      height: 24,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            
-            // Label with improved typography
-            const SizedBox(height: 6),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              style: TextStyle(
-                fontSize: isActive ? 11.5 : 10.5,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? const Color(0xFF6366f1) : const Color(0xFF64748b),
-                letterSpacing: isActive ? 0.3 : 0,
-                height: 1.2,
-              ),
-              child: AnimatedSlide(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.elasticOut,
-                offset: isActive ? Offset.zero : const Offset(0, 0.1),
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-            
-            // Enhanced indicator with gradient
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.elasticOut,
-              margin: const EdgeInsets.only(top: 4),
-              height: isActive ? 2.5 : 0,
-              width: isActive ? 20 : 0,
-              decoration: BoxDecoration(
-                gradient: isActive
-                    ? const LinearGradient(
-                        colors: [
-                          Color(0xFF6366f1),
-                          Color(0xFF8b5cf6),
-                          Color(0xFFd946ef),
-                        ],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      )
-                    : null,
-                borderRadius: BorderRadius.circular(2),
-                boxShadow: isActive
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFF6366f1).withOpacity(0.4),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ]
-                    : null,
-              ),
-            ),
-          ],
+          child: Icon(
+            isActive ? activeIcon : inactiveIcon,
+            size: isActive ? 30 : 26,
+            color: isActive 
+                ? Colors.white 
+                : const Color(0xFF6366f1).withOpacity(0.8),
+          ),
         ),
       ),
     );
   }
+
+
 }
