@@ -125,13 +125,8 @@ class EditorScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Editor Section  
-                            Builder(
-                              builder: (context) {
-                                debugPrint('Building EnhancedEditorWidget with image: ${originalImage.path}');
-                                return EnhancedEditorWidget(
-                                  originalImage: originalImage,
-                                );
-                              },
+                            EnhancedEditorWidget(
+                              originalImage: originalImage,
                             ),
                             const SizedBox(height: 24),
                             

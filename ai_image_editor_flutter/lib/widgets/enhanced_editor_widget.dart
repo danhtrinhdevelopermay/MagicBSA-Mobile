@@ -178,9 +178,6 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('EnhancedEditorWidget build called - image path: ${widget.originalImage.path}');
-    debugPrint('Categories count: ${_categories.length}');
-    
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -208,10 +205,7 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
               controller: _pageController,
               onPageChanged: (index) => setState(() => _currentPage = index),
               itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                debugPrint('Building category page $index: ${_categories[index].title}');
-                return _buildCategoryPage(_categories[index]);
-              },
+              itemBuilder: (context, index) => _buildCategoryPage(_categories[index]),
             ),
           ),
           
@@ -226,7 +220,10 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
 
   Widget _buildImagePreview() {
     return Container(
-      height: 200,
+      constraints: const BoxConstraints(
+        maxHeight: 200,
+        minHeight: 120,
+      ),
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -242,15 +239,13 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
         borderRadius: BorderRadius.circular(12),
         child: Image.file(
           widget.originalImage,
-          fit: BoxFit.cover,
+          fit: BoxFit.contain, // Preserve aspect ratio
         ),
       ),
     );
   }
 
   Widget _buildCategoryPage(FeatureCategory category) {
-    debugPrint('Building category: ${category.title} with ${category.features.length} features');
-    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -287,13 +282,10 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
           height: 320, // Fixed height for features list
           child: ListView.builder(
             itemCount: category.features.length,
-            itemBuilder: (context, index) {
-              debugPrint('Building feature card: ${category.features[index].title}');
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildFeatureCard(category.features[index]),
-              );
-            },
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildFeatureCard(category.features[index]),
+            ),
           ),
         ),
       ],

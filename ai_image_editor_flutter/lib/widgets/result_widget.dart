@@ -456,30 +456,35 @@ class _ResultWidgetState extends State<ResultWidget> {
             ],
           ),
         ),
-        // Images
-        AspectRatio(
-          aspectRatio: 2,
-          child: Row(
-            children: [
-              Expanded(
-                child: widget.originalImage != null
-                    ? Image.file(
-                        widget.originalImage!,
-                        fit: BoxFit.cover,
-                      )
-                    : Image.memory(
-                        widget.originalImageData!,
-                        fit: BoxFit.cover,
-                      ),
-              ),
-              Container(width: 1, color: const Color(0xFFe2e8f0)),
-              Expanded(
-                child: Image.memory(
-                  widget.processedImage,
-                  fit: BoxFit.cover,
+        // Images with natural aspect ratio preservation
+        ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxHeight: 300, // Limit height but preserve aspect ratio
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: widget.originalImage != null
+                      ? Image.file(
+                          widget.originalImage!,
+                          fit: BoxFit.contain, // Preserve aspect ratio
+                        )
+                      : Image.memory(
+                          widget.originalImageData!,
+                          fit: BoxFit.contain, // Preserve aspect ratio
+                        ),
                 ),
-              ),
-            ],
+                Container(width: 1, color: const Color(0xFFe2e8f0)),
+                Expanded(
+                  child: Image.memory(
+                    widget.processedImage,
+                    fit: BoxFit.contain, // Preserve aspect ratio
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -487,11 +492,13 @@ class _ResultWidgetState extends State<ResultWidget> {
   }
 
   Widget _buildSingleView() {
-    return AspectRatio(
-      aspectRatio: 1,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        maxHeight: 400, // Limit height but preserve aspect ratio
+      ),
       child: Image.memory(
         widget.processedImage,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain, // Preserve aspect ratio, don't crop
       ),
     );
   }
