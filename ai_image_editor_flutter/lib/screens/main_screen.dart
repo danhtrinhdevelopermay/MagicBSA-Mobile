@@ -256,136 +256,149 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildModernBottomNavigation() {
     return Container(
-      height: 95, // Increased total container height
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 32,
-            offset: const Offset(0, -8),
-            spreadRadius: 0,
+      margin: const EdgeInsets.all(20),
+        height: 80,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF6366f1),
+              Color(0xFF8b5cf6),
+              Color(0xFFec4899),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          BoxShadow(
-            color: const Color(0xFF6366f1).withOpacity(0.12),
-            blurRadius: 24,
-            offset: const Offset(0, -4),
-            spreadRadius: -2,
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.withOpacity(0.3),
-                  Colors.white.withOpacity(0.2),
-                  Colors.white.withOpacity(0.15),
-                ],
-                stops: const [0.0, 0.5, 1.0],
-              ),
-              border: Border(
-                top: BorderSide(
-                  color: Colors.white.withOpacity(0.4),
-                  width: 1.5,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366f1).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(25),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
                 ),
               ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(top: 12), // Add top padding to create space
-              child: CurvedNavigationBar(
-              index: _currentIndex,
-              height: 60, // Reduced height to create space above
-              items: [
-                _buildCustomNavIcon('assets/icons/navigation/home.png', 0),
-                _buildCustomNavIcon('assets/icons/navigation/history.png', 1),
-                _buildCustomNavIcon('assets/icons/navigation/premium.png', 2),
-                _buildCustomNavIcon('assets/icons/navigation/profile.png', 3),
-              ],
-              color: Colors.transparent,
-              buttonBackgroundColor: const Color(0xFF6366f1),
-              backgroundColor: Colors.transparent,
-              animationCurve: Curves.easeInOutCubic,
-              animationDuration: const Duration(milliseconds: 700),
-              letIndexChange: (index) => true,
-              onTap: _onTabTapped,
-            ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCustomNavIcon(String iconPath, int index) {
-    final isActive = _currentIndex == index;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOutBack,
-      transform: Matrix4.identity()
-        ..scale(isActive ? 1.2 : 0.9)
-        ..rotateZ(isActive ? 0.05 : 0.0),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 500),
-        switchInCurve: Curves.elasticOut,
-        switchOutCurve: Curves.easeInBack,
-        transitionBuilder: (child, animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(
-              scale: animation,
-              child: RotationTransition(
-                turns: Tween<double>(begin: 0.1, end: 0.0).animate(animation),
-                child: child,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(4, (index) {
+                  return _buildNavItem(index);
+                }),
               ),
             ),
-          );
-        },
-        child: Container(
-          key: ValueKey('$index-$isActive'),
-          margin: const EdgeInsets.only(top: 8), // Add top margin to push circle down
-          padding: const EdgeInsets.all(4),
-          decoration: isActive
-              ? BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.4),
-                      Colors.white.withOpacity(0.1),
-                    ],
-                    stops: const [0.0, 1.0],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.white.withOpacity(0.6),
-                      blurRadius: 12,
-                      offset: const Offset(0, 2),
-                      spreadRadius: 2,
-                    ),
-                    BoxShadow(
-                      color: const Color(0xFF6366f1).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                      spreadRadius: 0,
-                    ),
-                  ],
-                )
-              : null,
-          child: Image.asset(
-            iconPath,
-            width: isActive ? 32 : 28,
-            height: isActive ? 32 : 28,
-            fit: BoxFit.contain,
           ),
         ),
       ),
     );
   }
 
+  Widget _buildNavItem(int index) {
+    final isActive = _currentIndex == index;
+    final icons = [
+      Icons.home_rounded,
+      Icons.history_rounded,
+      Icons.diamond_rounded,
+      Icons.person_rounded,
+    ];
+    final labels = ['Trang chủ', 'Lịch sử', 'Premium', 'Hồ sơ'];
+    
+    return GestureDetector(
+      onTap: () => _onTabTapped(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.elasticOut,
+        padding: EdgeInsets.symmetric(
+          horizontal: isActive ? 16 : 12,
+          vertical: 12,
+        ),
+        decoration: isActive
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: Colors.white.withOpacity(0.25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              )
+            : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              transform: Matrix4.identity()
+                ..scale(isActive ? 1.1 : 0.9)
+                ..rotateZ(isActive ? 0.05 : 0.0),
+              child: Icon(
+                icons[index],
+                color: Colors.white,
+                size: isActive ? 28 : 24,
+                shadows: isActive
+                    ? [
+                        Shadow(
+                          color: Colors.white.withOpacity(0.5),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+            ),
+            if (isActive) ...[
+              const SizedBox(height: 4),
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: isActive ? 1.0 : 0.0,
+                child: Text(
+                  labels[index],
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOutCubic,
+    );
+  }
 }
