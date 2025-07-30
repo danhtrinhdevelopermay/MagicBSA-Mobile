@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/image_provider.dart';
+import '../screens/editor_screen.dart';
 import 'text_to_image_widget.dart';
 
 class ImageUploadWidget extends StatelessWidget {
@@ -373,9 +374,19 @@ class ImageUploadWidget extends StatelessWidget {
                     context: context,
                     icon: Icons.photo_library,
                     title: 'Thư viện',
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(context);
-                      provider.pickImage(ImageSource.gallery);
+                      await provider.pickImage(ImageSource.gallery);
+                      // Navigate to editor screen if image was selected
+                      if (provider.originalImage != null) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => EditorScreen(
+                              originalImage: provider.originalImage!,
+                            ),
+                          ),
+                        );
+                      }
                     },
                   ),
                 ),
@@ -385,9 +396,19 @@ class ImageUploadWidget extends StatelessWidget {
                     context: context,
                     icon: Icons.camera_alt,
                     title: 'Camera',
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(context);
-                      provider.pickImage(ImageSource.camera);
+                      await provider.pickImage(ImageSource.camera);
+                      // Navigate to editor screen if image was selected
+                      if (provider.originalImage != null) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => EditorScreen(
+                              originalImage: provider.originalImage!,
+                            ),
+                          ),
+                        );
+                      }
                     },
                   ),
                 ),

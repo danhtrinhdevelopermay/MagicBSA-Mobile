@@ -6,8 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import '../providers/image_provider.dart';
 import '../widgets/image_upload_widget.dart';
-import '../widgets/enhanced_editor_widget.dart';
-import '../widgets/result_widget.dart';
 import '../widgets/loading_overlay_widget.dart';
 import '../widgets/audio_controls_widget.dart';
 import '../services/audio_service.dart';
@@ -154,22 +152,6 @@ class _MainScreenState extends State<MainScreen> {
                                 
                                 // Upload Section
                                 const ImageUploadWidget(),
-                                const SizedBox(height: 24),
-                                
-                                // Editor Section  
-                                if (provider.originalImage != null)
-                                  EnhancedEditorWidget(
-                                    originalImage: provider.originalImage!,
-                                  ),
-                                const SizedBox(height: 24),
-                                
-                                // Result Section
-                                if (provider.processedImage != null)
-                                  ResultWidget(
-                                    originalImage: provider.originalImage,
-                                    processedImage: provider.processedImage!,
-                                    onStartOver: () => provider.reset(),
-                                  ),
                               ],
                             ),
                           ),
