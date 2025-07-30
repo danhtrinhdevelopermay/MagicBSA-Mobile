@@ -157,11 +157,19 @@ class _MainScreenState extends State<MainScreen> {
                                 const SizedBox(height: 24),
                                 
                                 // Editor Section  
-                                const EnhancedEditorWidget(),
+                                if (provider.originalImage != null)
+                                  EnhancedEditorWidget(
+                                    originalImage: provider.originalImage!,
+                                  ),
                                 const SizedBox(height: 24),
                                 
                                 // Result Section
-                                const ResultWidget(),
+                                if (provider.processedImage != null)
+                                  ResultWidget(
+                                    originalImage: provider.originalImage,
+                                    processedImage: provider.processedImage!,
+                                    onStartOver: () => provider.reset(),
+                                  ),
                               ],
                             ),
                           ),
@@ -182,8 +190,11 @@ class _MainScreenState extends State<MainScreen> {
               ),
               
               // Loading Overlay
-              if (provider.isLoading)
-                const LoadingOverlayWidget(),
+              if (provider.currentOperation != null)
+                LoadingOverlayWidget(
+                  isVisible: provider.currentOperation != null,
+                  message: provider.currentOperation?.toString() ?? 'Đang xử lý...',
+                ),
                 
               // Audio Controls
               Positioned(
@@ -325,7 +336,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),
