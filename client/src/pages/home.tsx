@@ -156,43 +156,45 @@ export default function Home() {
       <main className="max-w-md mx-auto px-4 pb-20">
         {renderMainContent()}
 
-        {/* Features Section */}
-        <section className="py-6">
-          <h3 className="font-semibold text-slate-800 mb-4">Features</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3">
-                <i className="fas fa-cut text-primary"></i>
+        {/* Features Section - Only show when no file is selected */}
+        {!selectedFile && !currentJob && (
+          <section className="py-6">
+            <h3 className="font-semibold text-slate-800 mb-4">Features</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3">
+                  <i className="fas fa-cut text-primary"></i>
+                </div>
+                <h4 className="font-medium text-slate-800 mb-1">Auto Background</h4>
+                <p className="text-xs text-slate-600">Remove backgrounds instantly with AI</p>
               </div>
-              <h4 className="font-medium text-slate-800 mb-1">Auto Background</h4>
-              <p className="text-xs text-slate-600">Remove backgrounds instantly with AI</p>
-            </div>
-            
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center mb-3">
-                <i className="fas fa-magic text-secondary"></i>
+              
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center mb-3">
+                  <i className="fas fa-magic text-secondary"></i>
+                </div>
+                <h4 className="font-medium text-slate-800 mb-1">AI Processing</h4>
+                <p className="text-xs text-slate-600">Fast and accurate AI processing</p>
               </div>
-              <h4 className="font-medium text-slate-800 mb-1">AI Processing</h4>
-              <p className="text-xs text-slate-600">Fast and accurate AI processing</p>
-            </div>
-            
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center mb-3">
-                <i className="fas fa-lightning-bolt text-accent"></i>
+              
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center mb-3">
+                  <i className="fas fa-lightning-bolt text-accent"></i>
+                </div>
+                <h4 className="font-medium text-slate-800 mb-1">Fast Processing</h4>
+                <p className="text-xs text-slate-600">Get results in seconds</p>
               </div>
-              <h4 className="font-medium text-slate-800 mb-1">Fast Processing</h4>
-              <p className="text-xs text-slate-600">Get results in seconds</p>
-            </div>
-            
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mb-3">
-                <i className="fas fa-shield-alt text-green-500"></i>
+              
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mb-3">
+                  <i className="fas fa-shield-alt text-green-500"></i>
+                </div>
+                <h4 className="font-medium text-slate-800 mb-1">High Quality</h4>
+                <p className="text-xs text-slate-600">Professional-grade results</p>
               </div>
-              <h4 className="font-medium text-slate-800 mb-1">High Quality</h4>
-              <p className="text-xs text-slate-600">Professional-grade results</p>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
       <BottomNavigation />
