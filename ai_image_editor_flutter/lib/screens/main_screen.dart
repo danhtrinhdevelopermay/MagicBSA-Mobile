@@ -300,10 +300,10 @@ class _MainScreenState extends State<MainScreen> {
               index: _currentIndex,
               height: 75,
               items: [
-                _buildNavIcon(Icons.home_rounded, Icons.home_outlined, 0),
-                _buildNavIcon(Icons.history_rounded, Icons.history_outlined, 1),
-                _buildNavIcon(Icons.star_rounded, Icons.star_border_rounded, 2),
-                _buildNavIcon(Icons.person_rounded, Icons.person_outline_rounded, 3),
+                _buildCustomNavIcon('assets/icons/navigation/home.png', 0),
+                _buildCustomNavIcon('assets/icons/navigation/history.png', 1),
+                _buildCustomNavIcon('assets/icons/navigation/premium.png', 2),
+                _buildCustomNavIcon('assets/icons/navigation/profile.png', 3),
               ],
               color: Colors.transparent,
               buttonBackgroundColor: const Color(0xFF6366f1),
@@ -319,16 +319,16 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavIcon(IconData activeIcon, IconData inactiveIcon, int index) {
+  Widget _buildCustomNavIcon(String iconPath, int index) {
     final isActive = _currentIndex == index;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOutBack,
       transform: Matrix4.identity()
-        ..scale(isActive ? 1.1 : 1.0)
-        ..rotateZ(isActive ? 0.1 : 0.0),
+        ..scale(isActive ? 1.2 : 0.9)
+        ..rotateZ(isActive ? 0.05 : 0.0),
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 500),
         switchInCurve: Curves.elasticOut,
         switchOutCurve: Curves.easeInBack,
         transitionBuilder: (child, animation) {
@@ -336,32 +336,55 @@ class _MainScreenState extends State<MainScreen> {
             opacity: animation,
             child: ScaleTransition(
               scale: animation,
-              child: child,
+              child: RotationTransition(
+                turns: Tween<double>(begin: 0.1, end: 0.0).animate(animation),
+                child: child,
+              ),
             ),
           );
         },
         child: Container(
           key: ValueKey('$index-$isActive'),
-          padding: const EdgeInsets.all(2),
+          padding: const EdgeInsets.all(4),
           decoration: isActive
               ? BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.4),
+                      Colors.white.withOpacity(0.1),
+                    ],
+                    stops: const [0.0, 1.0],
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.3),
-                      blurRadius: 8,
+                      color: Colors.white.withOpacity(0.6),
+                      blurRadius: 12,
                       offset: const Offset(0, 2),
-                      spreadRadius: 1,
+                      spreadRadius: 2,
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFF6366f1).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                      spreadRadius: 0,
                     ),
                   ],
                 )
               : null,
-          child: Icon(
-            isActive ? activeIcon : inactiveIcon,
-            size: isActive ? 30 : 26,
-            color: isActive 
-                ? Colors.white 
-                : const Color(0xFF6366f1).withOpacity(0.8),
+          child: ColorFiltered(
+            colorFilter: isActive
+                ? const ColorFilter.mode(Colors.white, BlendMode.srcIn)
+                : ColorFilter.mode(
+                    const Color(0xFF6366f1).withOpacity(0.7), 
+                    BlendMode.srcIn,
+                  ),
+            child: Image.asset(
+              iconPath,
+              width: isActive ? 32 : 28,
+              height: isActive ? 32 : 28,
+              fit: BoxFit.contain,
+            ),
           ),
         ),
       ),
