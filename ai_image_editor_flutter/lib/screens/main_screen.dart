@@ -296,9 +296,11 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
             ),
-            child: CurvedNavigationBar(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12), // Add top padding to create space
+              child: CurvedNavigationBar(
               index: _currentIndex,
-              height: 75,
+              height: 60, // Reduced height to create space above
               items: [
                 _buildCustomNavIcon('assets/icons/navigation/home.png', 0),
                 _buildCustomNavIcon('assets/icons/navigation/history.png', 1),
@@ -312,6 +314,7 @@ class _MainScreenState extends State<MainScreen> {
               animationDuration: const Duration(milliseconds: 700),
               letIndexChange: (index) => true,
               onTap: _onTabTapped,
+            ),
             ),
           ),
         ),
