@@ -28,6 +28,8 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
   bool _isDrawing = false;
   Path _currentPath = Path();
   ui.Image? _backgroundImage;
+  Size? _imageDisplaySize;
+  Size? _originalImageSize;
 
   @override
   void initState() {
@@ -39,6 +41,13 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
     final bytes = await widget.originalImage.readAsBytes();
     final codec = await ui.instantiateImageCodec(bytes);
     final frame = await codec.getNextFrame();
+    
+    // Get original image dimensions
+    final img.Image? originalImg = img.decodeImage(bytes);
+    if (originalImg != null) {
+      _originalImageSize = Size(originalImg.width.toDouble(), originalImg.height.toDouble());
+    }
+    
     setState(() {
       _backgroundImage = frame.image;
     });
@@ -79,59 +88,15 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
       // Get original image dimensions first
       final originalImageBytes = await widget.originalImage.readAsBytes();
       final img.Image? originalImg = img.decodeImage(originalImageBytes);
-      if (originalImg == null) {
-        throw Exception('Không thể đọc ảnh gốc');
+      if (originalImg == null || _originalImageSize == null || _imageDisplaySize == null) {
+        throw Exception('Không thể đọc ảnh gốc hoặc thông tin kích thước');
       }
 
-      // Create a mask-only canvas without background image
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final Canvas maskCanvas = Canvas(recorder);
-      final Size canvasSize = Size(
-        MediaQuery.of(context).size.width - 32,
-        MediaQuery.of(context).size.width - 32,
-      );
-      
-      // Draw ONLY mask strokes on transparent background
-      final maskPaint = Paint()
-        ..color = Colors.white // Use white for mask areas (will be detected)
-        ..strokeWidth = _brushSize
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke;
+      // Calculate scaling factors between display and original image
+      final double scaleX = _originalImageSize!.width / _imageDisplaySize!.width;
+      final double scaleY = _originalImageSize!.height / _imageDisplaySize!.height;
 
-      // Draw all completed paths as white strokes
-      for (final path in _paths) {
-        maskCanvas.drawPath(path, maskPaint);
-      }
-
-      // End recording and create image from mask-only canvas
-      final ui.Picture maskPicture = recorder.endRecording();
-      final ui.Image maskOnlyImage = await maskPicture.toImage(
-        canvasSize.width.toInt(),
-        canvasSize.height.toInt(),
-      );
-      
-      final ByteData? byteData = await maskOnlyImage.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) {
-        throw Exception('Không thể tạo mask từ canvas');
-      }
-
-      // Convert to image package format
-      final Uint8List canvasPngBytes = byteData.buffer.asUint8List();
-      final img.Image? canvasMask = img.decodePng(canvasPngBytes);
-      
-      if (canvasMask == null) {
-        throw Exception('Không thể decode canvas mask');
-      }
-
-      // Resize canvas mask to match original image dimensions
-      final img.Image resizedCanvasMask = img.copyResize(
-        canvasMask,
-        width: originalImg.width,
-        height: originalImg.height,
-        interpolation: img.Interpolation.nearest,
-      );
-
-      // Create binary mask with same dimensions as original image (RGB format for compatibility)
+      // Create binary mask directly with original image dimensions (no resizing needed)
       final img.Image binaryMask = img.Image(
         width: originalImg.width,
         height: originalImg.height,
@@ -145,30 +110,40 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
       int whitePixelCount = 0;
       int totalPixels = originalImg.width * originalImg.height;
 
-      // Convert drawn areas to white (255 = remove as per Clipdrop API)
-      for (int y = 0; y < originalImg.height; y++) {
-        for (int x = 0; x < originalImg.width; x++) {
-          final pixel = resizedCanvasMask.getPixel(x, y);
-          
-          // Check if this is a drawn stroke (look for white pixels from mask canvas)
-          // Since we drew with white color, detect white pixels with high alpha
-          final red = pixel.r;
-          final green = pixel.g;  
-          final blue = pixel.b;
-          final alpha = pixel.a;
-          
-          // Detect white drawing strokes (all RGB channels high + high alpha)
-          if (alpha > 100 && red > 200 && green > 200 && blue > 200) {
-            binaryMask.setPixelRgb(x, y, 255, 255, 255); // White = remove
-            whitePixelCount++;
+      // Convert drawing paths to mask pixels with accurate coordinate mapping
+      for (final path in _paths) {
+        // Extract points from path and scale them to original image coordinates
+        final PathMetrics pathMetrics = path.computeMetrics();
+        for (final PathMetric pathMetric in pathMetrics) {
+          for (double distance = 0.0; distance < pathMetric.length; distance += 1.0) {
+            final Tangent? tangent = pathMetric.getTangentForOffset(distance);
+            if (tangent != null) {
+              // Convert display coordinates to original image coordinates
+              final int originalX = (tangent.position.dx * scaleX).round();
+              final int originalY = (tangent.position.dy * scaleY).round();
+              
+              // Apply brush size in original image coordinates
+              final int brushRadius = (_brushSize * scaleX * 0.5).round();
+              
+              // Draw brush stroke as circle in original image coordinates
+              for (int dy = -brushRadius; dy <= brushRadius; dy++) {
+                for (int dx = -brushRadius; dx <= brushRadius; dx++) {
+                  final int pixelX = originalX + dx;
+                  final int pixelY = originalY + dy;
+                  
+                  // Check if pixel is within image bounds and brush radius
+                  if (pixelX >= 0 && pixelX < originalImg.width && 
+                      pixelY >= 0 && pixelY < originalImg.height &&
+                      (dx * dx + dy * dy) <= (brushRadius * brushRadius)) {
+                    binaryMask.setPixelRgb(pixelX, pixelY, 255, 255, 255); // White = remove
+                    whitePixelCount++;
+                  }
+                }
+              }
+            }
           }
-          // All other pixels remain black = keep (already filled with black)
         }
       }
-      
-      print('DEBUG: Canvas mask size: ${resizedCanvasMask.width}x${resizedCanvasMask.height}');
-      print('DEBUG: Total pixels checked: ${originalImg.width * originalImg.height}');
-      print('DEBUG: Detected stroke pixels: $whitePixelCount');
 
       // Validate mask quality
       double whitePercentage = (whitePixelCount / totalPixels) * 100;
@@ -267,17 +242,53 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
                     onPanStart: _onPanStart,
                     onPanUpdate: _onPanUpdate,
                     onPanEnd: _onPanEnd,
-                    child: CustomPaint(
-                      size: Size(
-                        MediaQuery.of(context).size.width - 32,
-                        MediaQuery.of(context).size.width - 32,
-                      ),
-                      painter: MaskPainter(
-                        backgroundImage: _backgroundImage,
-                        paths: _paths,
-                        currentPath: _isDrawing ? _currentPath : null,
-                        brushSize: _brushSize,
-                      ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Calculate display size that maintains aspect ratio
+                        if (_backgroundImage != null && _originalImageSize != null) {
+                          final double availableWidth = MediaQuery.of(context).size.width - 32;
+                          final double availableHeight = constraints.maxHeight - 100; // Leave space for controls
+                          
+                          final double imageAspectRatio = _originalImageSize!.width / _originalImageSize!.height;
+                          
+                          double displayWidth, displayHeight;
+                          if (availableWidth / availableHeight > imageAspectRatio) {
+                            // Height is limiting factor
+                            displayHeight = availableHeight;
+                            displayWidth = displayHeight * imageAspectRatio;
+                          } else {
+                            // Width is limiting factor
+                            displayWidth = availableWidth;
+                            displayHeight = displayWidth / imageAspectRatio;
+                          }
+                          
+                          // Store display size for coordinate mapping
+                          _imageDisplaySize = Size(displayWidth, displayHeight);
+                          
+                          return CustomPaint(
+                            size: Size(displayWidth, displayHeight),
+                            painter: MaskPainter(
+                              backgroundImage: _backgroundImage,
+                              paths: _paths,
+                              currentPath: _isDrawing ? _currentPath : null,
+                              brushSize: _brushSize,
+                            ),
+                          );
+                        }
+                        
+                        // Fallback to square canvas if image not loaded
+                        final size = MediaQuery.of(context).size.width - 32;
+                        _imageDisplaySize = Size(size, size);
+                        return CustomPaint(
+                          size: Size(size, size),
+                          painter: MaskPainter(
+                            backgroundImage: _backgroundImage,
+                            paths: _paths,
+                            currentPath: _isDrawing ? _currentPath : null,
+                            brushSize: _brushSize,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),

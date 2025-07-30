@@ -16,6 +16,15 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 30, 2025)
 
+✓ **FIXED OBJECT REMOVAL PRECISION** - Enhanced mask drawing accuracy to ensure precise object removal:
+  - Fixed coordinate mapping between display canvas and original image dimensions
+  - Added proper scaling factors (scaleX, scaleY) for accurate position conversion
+  - Implemented aspect ratio-aware display sizing with LayoutBuilder
+  - Direct mask creation in original image coordinates without resizing artifacts
+  - Brush strokes now map exactly to removal areas with pixel-perfect precision
+  - PathMetrics extraction for accurate stroke-to-pixel conversion
+  - Eliminated coordinate drift that caused inaccurate object removal
+  - Users can now draw precisely where they want objects removed
 ✓ **CREATED OBJECT REMOVAL INTERFACE** - Built professional object removal screen matching user's design specification:
   - Replicated exact UI from user's screenshot: header with back arrow, eye toggle, settings icon
   - Implemented full-screen image display with mask drawing functionality using CustomPainter
