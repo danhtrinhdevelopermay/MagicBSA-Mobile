@@ -233,8 +233,18 @@ class ImageEditProvider extends ChangeNotifier {
 
   // Set processed image (for external processing results)
   void setProcessedImage(Uint8List imageData) {
+    print('Setting processed image in provider...');
+    print('Image data size: ${imageData.length} bytes');
     _processedImage = imageData;
+    _currentOperation = null; // Clear current operation
+    _progress = 1.0; // Set progress to complete
     _setState(ProcessingState.completed);
+    print('Provider state updated to completed');
+    
+    // Save to history after setting processed image
+    if (_originalImage != null) {
+      _saveToHistory(ProcessingOperation.cleanup, 'Dọn dẹp đối tượng');
+    }
   }
 
   // Clear error

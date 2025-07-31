@@ -16,6 +16,14 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **ENHANCED OBJECT REMOVAL DEBUGGING** - Thêm debug logging và cải thiện UI feedback cho tính năng xóa vật thể:
+  - Added comprehensive debug logging throughout SimpleMaskDrawingScreen processing pipeline
+  - Enhanced error handling with proper dialog cleanup and detailed error messages  
+  - Improved setProcessedImage method to auto-save to history and provide UI feedback
+  - Added success notification with scroll instruction after processing completes
+  - Enhanced provider state management with proper progress and operation clearing
+  - User giờ sẽ thấy thông báo thành công và hướng dẫn kéo xuống để xem kết quả sau khi xử lý
+  
 ✓ **FIXED OBJECT REMOVAL FEATURE** - Khắc phục lỗi tính năng xóa vật thể không trả về kết quả:
   - Fixed SimpleMaskDrawingScreen to use proper processImage() method instead of non-existent cleanup() method
   - Corrected API call from clipDropService.cleanup() to clipDropService.processImage() with ProcessingOperation.cleanup

@@ -192,6 +192,9 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
     }
 
     try {
+      print('=== CLEANUP PROCESSING START ===');
+      print('Total mask strokes: ${_maskStrokes.length}');
+      
       // Show loading dialog
       showDialog(
         context: context,
@@ -208,11 +211,29 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
       );
 
       // Create mask file
+      print('Creating mask file...');
       final maskFile = await _createMaskFile();
+      print('Mask file created: ${maskFile.path}');
 
       Navigator.pop(context); // Close loading dialog
 
+      // Show processing dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Đang xử lý với AI...'),
+            ],
+          ),
+        ),
+      );
+
       // Process with ClipDrop API
+      print('Processing with ClipDrop API...');
       final clipDropService = ClipDropService();
       final result = await clipDropService.processImage(
         widget.originalImage,
@@ -221,15 +242,21 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
         mode: 'fast',
       );
 
+      Navigator.pop(context); // Close processing dialog
+      print('Processing completed successfully');
+      print('Result size: ${result.length} bytes');
+
       // Return result to previous screen
       Navigator.pop(context, result);
 
     } catch (e) {
-      Navigator.pop(context); // Close loading dialog
+      print('ERROR in _processMask: $e');
+      Navigator.of(context).popUntil((route) => route.settings.name != null || route.isFirst); // Close any dialogs
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lỗi: $e'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
         ),
       );
     }

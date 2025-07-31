@@ -809,6 +809,7 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
   }
 
   Future<void> _navigateToMaskDrawing(Feature feature, ImageEditProvider provider) async {
+    print('Navigating to mask drawing screen...');
     final result = await Navigator.push<Uint8List>(
       context,
       MaterialPageRoute(
@@ -819,9 +820,24 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
       ),
     );
 
+    print('Returned from mask drawing screen');
+    print('Result is null: ${result == null}');
     if (result != null) {
+      print('Result size: ${result.length} bytes');
       // Set processed image in provider
       provider.setProcessedImage(result);
+      print('Processed image set in provider');
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Xử lý thành công! Kéo xuống để xem kết quả.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } else {
+      print('No result returned from mask drawing screen');
     }
   }
 
