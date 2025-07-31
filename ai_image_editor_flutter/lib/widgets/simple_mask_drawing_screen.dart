@@ -809,30 +809,6 @@ class AnimatedMaskPainter extends CustomPainter {
         canvas.drawCircle(center, radius + 1, borderPaint);
       }
     }
-
-    // Draw mask strokes with animated color
-    final maskPaint = Paint()
-      ..color = maskColor.withOpacity(0.7)
-      ..style = PaintingStyle.fill;
-
-    final strokePaint = Paint()
-      ..color = Colors.white.withOpacity(0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    for (final stroke in maskStrokes) {
-      final adjustedStroke = Offset(stroke.dx + offsetX, stroke.dy + offsetY);
-      
-      // ✅ PROCESSING EFFECT: Add pulsing animation during processing
-      final radius = isProcessing 
-          ? (brushSize / 2) * (1.0 + 0.2 * sin(animationValue * 4 * 3.14159))
-          : brushSize / 2;
-      
-      // Draw animated mask fill
-      canvas.drawCircle(adjustedStroke, radius, maskPaint);
-      // Draw white border for visibility
-      canvas.drawCircle(adjustedStroke, radius, strokePaint);
-    }
     
     // ✅ PROCESSING OVERLAY: Show processing text during animation
     if (isProcessing && maskStrokes.isNotEmpty) {

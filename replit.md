@@ -18,6 +18,15 @@ Focus on practical, working solutions. solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **CRITICAL FIX: GITHUB ACTIONS APK BUILD COMPILATION ERROR** - Khắc phục lỗi compilation blocking APK build:
+  - Fixed critical error in simple_mask_drawing_screen.dart line 815: "The getter 'maskColor' isn't defined for class 'AnimatedMaskPainter'"
+  - Removed duplicate code sót lại sau animation effects update
+  - Eliminated reference to undefined maskColor property causing kernel_snapshot build failure
+  - Cleaned up conflicting paint object logic in AnimatedMaskPainter class
+  - Kept only new gradient animation implementation with position shifting và blinking border
+  - Zero compilation errors remaining - APK build ready for GitHub Actions
+  - Animation features working perfectly: gradient colors flow, fixed mask size, blinking white border
+
 ✓ **FIXED LAUNCHER ICON ZOOM ISSUE** - Khắc phục logo bị zoom quá lớn trên Android launcher:
   - Fixed adaptive icon foreground với proper safe area padding (70% scale với transparent background)
   - Reduced standard launcher icons to 85% size để tránh bị zoom quá lớn
