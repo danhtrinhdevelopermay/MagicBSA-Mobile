@@ -6,7 +6,9 @@ import '../screens/editor_screen.dart';
 import 'text_to_image_widget.dart';
 
 class ImageUploadWidget extends StatefulWidget {
-  const ImageUploadWidget({super.key});
+  final String? preSelectedFeature;
+  
+  const ImageUploadWidget({super.key, this.preSelectedFeature});
 
   @override
   State<ImageUploadWidget> createState() => _ImageUploadWidgetState();
@@ -26,6 +28,7 @@ class _ImageUploadWidgetState extends State<ImageUploadWidget> {
             MaterialPageRoute(
               builder: (context) => EditorScreen(
                 originalImage: file,
+                preSelectedFeature: widget.preSelectedFeature,
               ),
             ),
           );

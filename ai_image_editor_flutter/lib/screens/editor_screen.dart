@@ -12,10 +12,12 @@ import '../widgets/audio_controls_widget.dart';
 
 class EditorScreen extends StatefulWidget {
   final File originalImage;
+  final String? preSelectedFeature;
   
   const EditorScreen({
     super.key,
     required this.originalImage,
+    this.preSelectedFeature,
   });
 
   @override
@@ -209,6 +211,7 @@ class _EditorScreenState extends State<EditorScreen> {
                             // Editor Section  
                             EnhancedEditorWidget(
                               originalImage: widget.originalImage,
+                              preSelectedFeature: widget.preSelectedFeature,
                             ),
                             const SizedBox(height: 24),
                             
