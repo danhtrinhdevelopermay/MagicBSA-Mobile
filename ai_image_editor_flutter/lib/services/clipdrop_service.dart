@@ -8,7 +8,6 @@ import 'package:image/image.dart' as img;
 enum ProcessingOperation {
   removeBackground,
   removeText, 
-  cleanup,
   uncrop,
   reimagine,
   replaceBackground,
@@ -21,7 +20,7 @@ class ClipDropService {
   // API endpoints
   static const String _removeBackgroundUrl = 'https://clipdrop-api.co/remove-background/v1';
   static const String _removeTextUrl = 'https://clipdrop-api.co/remove-text/v1';
-  static const String _cleanupUrl = 'https://clipdrop-api.co/cleanup/v1';
+
   static const String _uncropUrl = 'https://clipdrop-api.co/uncrop/v1';
   static const String _reimagineUrl = 'https://clipdrop-api.co/reimagine/v1/reimagine';
   static const String _replaceBackgroundUrl = 'https://clipdrop-api.co/replace-background/v1';
@@ -138,7 +137,7 @@ class ClipDropService {
   Future<Uint8List> processImage(
     File imageFile, 
     ProcessingOperation operation, {
-    File? maskFile,
+
     File? backgroundFile,
     String? prompt,
     String? scene,
@@ -187,9 +186,7 @@ class ClipDropService {
         case ProcessingOperation.removeText:
           apiUrl = _removeTextUrl;
           break;
-        case ProcessingOperation.cleanup:
-          apiUrl = _cleanupUrl;
-          break;
+
         case ProcessingOperation.uncrop:
           apiUrl = _uncropUrl;
           break;
@@ -220,25 +217,7 @@ class ClipDropService {
 
       // Add operation-specific parameters
       switch (operation) {
-        case ProcessingOperation.cleanup:
-          if (maskFile != null) {
-            // Use mask file as-is without resizing (already created with correct dimensions)
-            formData.files.add(MapEntry(
-              'mask_file',
-              await MultipartFile.fromFile(
-                maskFile.path,
-                filename: 'mask.png', // Force PNG extension for mask
-              ),
-            ));
-            // Add mode parameter - using quality mode for better results as per Clipdrop docs
-            formData.fields.add(MapEntry('mode', 'quality'));
-            print('Cleanup API call with mask: ${maskFile.path}');
-            print('Mode: quality (slower processing, better results)');
-            print('Mask file used without resizing (already correct dimensions)');
-          } else {
-            throw Exception('Cleanup operation requires a mask file');
-          }
-          break;
+
         
         case ProcessingOperation.uncrop:
           if (extendLeft != null && extendLeft > 0) {
@@ -351,13 +330,7 @@ class ClipDropService {
     return processImage(imageFile, ProcessingOperation.removeText);
   }
 
-  Future<Uint8List> cleanup(File imageFile, File maskFile) async {
-    return processImage(imageFile, ProcessingOperation.cleanup, maskFile: maskFile);
-  }
 
-  Future<Uint8List> removeLogo(File imageFile) async {
-    return processImage(imageFile, ProcessingOperation.cleanup);
-  }
 
   // New API methods
   Future<Uint8List> uncrop(File imageFile, {
@@ -500,11 +473,7 @@ class ClipDropService {
         maxWidth = maxHeight = 5000;
         operationName = 'Remove Background';
         break;
-      case ProcessingOperation.cleanup:
-        // 16 megapixels = 4000x4000 approximately
-        maxWidth = maxHeight = 4000;
-        operationName = 'Cleanup';
-        break;
+
       case ProcessingOperation.uncrop:
         // 10 megapixels = 3162x3162 approximately
         maxWidth = maxHeight = 3162;

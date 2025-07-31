@@ -4,12 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/image_provider.dart';
 import '../services/clipdrop_service.dart';
-import 'simple_mask_drawing_screen.dart';
-import 'precision_mask_painter.dart';
-import '../screens/object_removal_screen.dart';
+
 
 enum InputType {
-  mask,
   prompt,
   uncrop,
   scene,
@@ -97,14 +94,7 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
           icon: Icons.layers_clear,
           needsInput: false,
         ),
-        Feature(
-          operation: ProcessingOperation.cleanup,
-          title: 'Dọn dẹp đối tượng',
-          subtitle: 'Xóa các đối tượng với mask',
-          icon: Icons.cleaning_services,
-          needsInput: true,
-          inputType: InputType.mask,
-        ),
+
         Feature(
           operation: ProcessingOperation.removeText,
           title: 'Xóa văn bản',
@@ -385,9 +375,7 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
       case InputType.scene:
         _showSceneDialog(feature, provider);
         break;
-      case InputType.mask:
-        _showMaskDialog(feature);
-        break;
+
       case InputType.upscaling:
         _showUpscalingDialog(feature, provider);
         break;
@@ -630,95 +618,7 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
     );
   }
 
-  void _showMaskDialog(Feature feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Chọn Phương Pháp Vẽ Mask'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Chọn phương pháp vẽ mask phù hợp với nhu cầu của bạn:',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            
-            // Standard Method
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ListTile(
-                leading: const Icon(Icons.brush, color: Colors.blue),
-                title: const Text('Phương Pháp Đơn Giản'),
-                subtitle: const Text('Mask drawing ổn định theo đúng Clipdrop API'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => SimpleMaskDrawingScreen(
-                        originalImage: widget.originalImage,
-                        onMaskCreated: (maskFile) {
-                          final provider = context.read<ImageEditProvider>();
-                          provider.processImageWithMask(
-                            ProcessingOperation.cleanup,
-                            maskFile: maskFile,
-                          );
-                          Navigator.of(context).pop(); // Return to main screen
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // Precision Method 
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.green.shade300),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ListTile(
-                leading: const Icon(Icons.precision_manufacturing, color: Colors.green),
-                title: const Text('Phương Pháp Chính Xác'),
-                subtitle: const Text('Bitmap mask, theo đúng yêu cầu Clipdrop API'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => PrecisionMaskPainter(
-                        originalImage: widget.originalImage,
-                        brushSize: 20.0,
-                        onMaskCreated: (maskFile) {
-                          final provider = context.read<ImageEditProvider>();
-                          provider.processImageWithMask(
-                            ProcessingOperation.cleanup,
-                            maskFile: maskFile,
-                          );
-                          Navigator.of(context).pop(); // Return to main screen
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   void _showUpscalingDialog(Feature feature, ImageEditProvider provider) {
     showDialog(

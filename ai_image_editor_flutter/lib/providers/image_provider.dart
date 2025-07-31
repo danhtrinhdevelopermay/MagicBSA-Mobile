@@ -73,7 +73,7 @@ class ImageEditProvider extends ChangeNotifier {
   // Process image with specific operation
   Future<void> processImage(
     ProcessingOperation operation, {
-    File? maskFile,
+
     File? backgroundFile,
     String? prompt,
     String? scene,
@@ -96,9 +96,7 @@ class ImageEditProvider extends ChangeNotifier {
         case ProcessingOperation.removeText:
           operationText = 'Đang xóa văn bản...';
           break;
-        case ProcessingOperation.cleanup:
-          operationText = 'Đang dọn dẹp đối tượng...';
-          break;
+
         case ProcessingOperation.uncrop:
           operationText = 'Đang mở rộng ảnh...';
           break;
@@ -131,7 +129,7 @@ class ImageEditProvider extends ChangeNotifier {
         result = await _clipDropService.processImage(
           _originalImage!, 
           operation, 
-          maskFile: maskFile,
+
           backgroundFile: backgroundFile,
           prompt: prompt,
           scene: scene,
@@ -166,39 +164,9 @@ class ImageEditProvider extends ChangeNotifier {
     await processImage(ProcessingOperation.removeText);
   }
 
-  Future<void> cleanup({File? maskFile}) async {
-    await processImage(ProcessingOperation.cleanup, maskFile: maskFile);
-  }
 
-  // Process image with mask - specifically for cleanup operations
-  Future<void> processImageWithMask(
-    ProcessingOperation operation, {
-    required File maskFile,
-  }) async {
-    if (_originalImage == null) return;
-    
-    try {
-      _currentOperation = 'Đang dọn dẹp đối tượng...';
-      _setState(ProcessingState.processing);
-      _startProgressAnimation();
 
-      final result = await _clipDropService.processImage(
-        _originalImage!, 
-        operation, 
-        maskFile: maskFile,
-      );
-      
-      _processedImage = result;
-      _currentOperation = null; // Clear current operation when completed
-      _setState(ProcessingState.completed);
-      _progress = 1.0;
-      
-      // Save to history after successful processing
-      await _saveToHistory(operation, 'Đang dọn dẹp đối tượng...');
-    } catch (e) {
-      _setError('Lỗi khi dọn dẹp ảnh: $e');
-    }
-  }
+
 
   // New ClipDrop API methods
   Future<void> uncrop({
@@ -349,8 +317,6 @@ class ImageEditProvider extends ChangeNotifier {
         return 'Xóa background';
       case ProcessingOperation.removeText:
         return 'Xóa text';
-      case ProcessingOperation.cleanup:
-        return 'Dọn dẹp đối tượng';
       case ProcessingOperation.uncrop:
         return 'Mở rộng ảnh';
       case ProcessingOperation.reimagine:
@@ -359,6 +325,8 @@ class ImageEditProvider extends ChangeNotifier {
         return 'Tạo ảnh từ text';
       case ProcessingOperation.replaceBackground:
         return 'Thay background';
+      case ProcessingOperation.productPhotography:
+        return 'Chụp sản phẩm';
       case ProcessingOperation.imageUpscaling:
         return 'Nâng cấp độ phân giải';
       default:
