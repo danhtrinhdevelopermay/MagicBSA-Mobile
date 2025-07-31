@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/clipdrop_service.dart';
+import '../models/processing_operation.dart';
 
 enum ProcessingState {
   idle,
@@ -22,6 +23,7 @@ class ImageEditProvider extends ChangeNotifier {
   String _errorMessage = '';
   String _currentOperation = '';
   double _progress = 0.0;
+  ProcessingOperation? _selectedOperation;
 
   // Getters
   File? get originalImage => _originalImage;
@@ -30,6 +32,7 @@ class ImageEditProvider extends ChangeNotifier {
   String get errorMessage => _errorMessage;
   String get currentOperation => _currentOperation;
   double get progress => _progress;
+  ProcessingOperation? get selectedOperation => _selectedOperation;
 
   // Pick image from gallery or camera
   Future<void> pickImage(ImageSource source) async {
@@ -214,6 +217,20 @@ class ImageEditProvider extends ChangeNotifier {
     );
   }
 
+  // Set selected operation
+  void setSelectedOperation(ProcessingOperation? operation) {
+    _selectedOperation = operation;
+    notifyListeners();
+  }
+
+  // Set original image from file path
+  Future<void> setOriginalImage(String imagePath) async {
+    _originalImage = File(imagePath);
+    _processedImage = null;
+    _setState(ProcessingState.idle);
+    notifyListeners();
+  }
+
   // Reset to initial state
   void reset() {
     _originalImage = null;
@@ -222,6 +239,7 @@ class ImageEditProvider extends ChangeNotifier {
     _errorMessage = '';
     _currentOperation = '';
     _progress = 0.0;
+    _selectedOperation = null;
   }
 
   // Clear error

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'screens/splash_screen.dart';
+import 'screens/generation_screen.dart';
+import 'screens/upload_screen.dart';
+import 'screens/editor_screen.dart';
 import 'providers/image_provider.dart';
 
 void main() {
@@ -40,6 +43,11 @@ class AIImageEditorApp extends StatelessWidget {
           fontFamily: 'Roboto',
         ),
         home: const SplashScreen(),
+        routes: {
+          '/generation': (context) => const GenerationScreen(),
+          '/upload': (context) => const UploadScreen(),
+          '/editor': (context) => const EditorScreen(),
+        },
       ),
     );
   }

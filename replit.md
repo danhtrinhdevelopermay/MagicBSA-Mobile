@@ -18,6 +18,18 @@ Focus on practical, working solutions. solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **COMPLETE FLUTTER FLOW REDESIGN: FEATURE-FIRST APPROACH** - Thay đổi hoàn toàn flow từ upload → chọn tính năng sang chọn tính năng → upload:
+  - Created GenerationScreen với 8 thẻ tính năng có video demo tự động phát lặp lại
+  - Built UploadScreen riêng cho từng tính năng với mô tả chi tiết và tips
+  - Updated routing flow: Splash → Generation → Upload → Editor
+  - Added video_player dependency và copy 8 demo videos vào assets/videos/
+  - Enhanced ImageEditProvider với selectedOperation tracking và setOriginalImage method
+  - Created EditorScreen để xử lý auto-processing cho non-cleanup operations
+  - Updated splash screen để navigate đến GenerationScreen thay vì HomeScreen
+  - Video demos cho: Remove Background, Cleanup, Remove Text, Uncrop, Upscaling, Reimagine, Text-to-Image, Product Photography
+  - Mỗi feature card hiển thị video demo với gradient overlay, play indicator, icon và description
+  - User experience flow: chọn tính năng trước → xem demo và mô tả → upload ảnh → auto-processing
+
 ✓ **IMPLEMENTED AUTO-SCROLL TO RESULTS FEATURE** - Added automatic scrolling to show results after image processing completion:
   - Enhanced EditorScreen with ScrollController và GlobalKey để track result widget position
   - Added listener to ImageEditProvider state changes để trigger auto-scroll khi processing completed
