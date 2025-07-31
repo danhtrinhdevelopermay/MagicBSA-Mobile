@@ -97,67 +97,78 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
       final double scaleX = _originalImageSize!.width / _imageDisplaySize!.width;
       final double scaleY = _originalImageSize!.height / _imageDisplaySize!.height;
 
-      // Create grayscale mask with original image dimensions 
-      // Clipdrop API prefers grayscale masks for better accuracy
+      // Create binary mask with EXACT same dimensions as original image (per Clipdrop docs)
       final img.Image binaryMask = img.Image(
         width: originalImg.width,
         height: originalImg.height,
-        numChannels: 1, // Grayscale format for better Clipdrop API compatibility
+        numChannels: 1, // Grayscale for PNG output
       );
 
-      // Fill with black background (0 = keep as per Clipdrop API)
-      img.fill(binaryMask, color: img.ColorRgb8(0, 0, 0));
+      // Fill with pure black (0 = keep as per Clipdrop API documentation)
+      img.fill(binaryMask, color: img.ColorUint8(0));
 
       // Count pixels to validate mask
       int whitePixelCount = 0;
       int totalPixels = originalImg.width * originalImg.height;
 
-      // Convert drawing paths to mask pixels with accurate coordinate mapping
+      // Convert drawing paths to mask pixels with precise coordinate mapping
       for (final path in _paths) {
-        // Extract points from path and scale them to original image coordinates
+        // Create a list to store all stroke points first
+        List<Offset> strokePoints = [];
+        
+        // Extract all points from path
         final ui.PathMetrics pathMetrics = path.computeMetrics();
         for (final ui.PathMetric pathMetric in pathMetrics) {
-          // Use smaller distance step for more detailed mask coverage
-          for (double distance = 0.0; distance < pathMetric.length; distance += 0.5) {
+          // Use very small distance for maximum precision
+          for (double distance = 0.0; distance < pathMetric.length; distance += 0.25) {
             final ui.Tangent? tangent = pathMetric.getTangentForOffset(distance);
             if (tangent != null) {
-              // Convert display coordinates to original image coordinates
-              final int originalX = (tangent.position.dx * scaleX).round();
-              final int originalY = (tangent.position.dy * scaleY).round();
+              strokePoints.add(tangent.position);
+            }
+          }
+        }
+        
+        // Apply each stroke point with expanded brush (15% larger as per Clipdrop tips)
+        for (final point in strokePoints) {
+          // Convert display coordinates to original image coordinates
+          final int originalX = (point.dx * scaleX).round();
+          final int originalY = (point.dy * scaleY).round();
+          
+          // Calculate expanded brush size (15% larger than drawn for better results)
+          final int baseBrushRadius = math.max(3, (_brushSize * math.min(scaleX, scaleY) * 0.5).round());
+          final int expandedBrushRadius = (baseBrushRadius * 1.15).round(); // 15% expansion
+          
+          // Draw filled circle with pure white (255 = remove)
+          for (int dy = -expandedBrushRadius; dy <= expandedBrushRadius; dy++) {
+            for (int dx = -expandedBrushRadius; dx <= expandedBrushRadius; dx++) {
+              final int pixelX = originalX + dx;
+              final int pixelY = originalY + dy;
               
-              // Apply brush size in original image coordinates with minimum size
-              final int brushRadius = math.max(2, (_brushSize * math.min(scaleX, scaleY) * 0.5).round());
-              
-              // Draw brush stroke as circle in original image coordinates
-              for (int dy = -brushRadius; dy <= brushRadius; dy++) {
-                for (int dx = -brushRadius; dx <= brushRadius; dx++) {
-                  final int pixelX = originalX + dx;
-                  final int pixelY = originalY + dy;
-                  
-                  // Check if pixel is within image bounds and brush radius
-                  if (pixelX >= 0 && pixelX < originalImg.width && 
-                      pixelY >= 0 && pixelY < originalImg.height &&
-                      (dx * dx + dy * dy) <= (brushRadius * brushRadius)) {
-                    binaryMask.setPixel(pixelX, pixelY, img.ColorRgb8(255, 255, 255)); // White = remove
-                    whitePixelCount++;
-                  }
-                }
+              // Check if pixel is within image bounds and brush radius
+              if (pixelX >= 0 && pixelX < originalImg.width && 
+                  pixelY >= 0 && pixelY < originalImg.height &&
+                  (dx * dx + dy * dy) <= (expandedBrushRadius * expandedBrushRadius)) {
+                // Set pure white (255) for removal as per Clipdrop documentation
+                binaryMask.setPixel(pixelX, pixelY, img.ColorUint8(255));
+                whitePixelCount++;
               }
             }
           }
         }
       }
 
-      // Validate mask quality with detailed logging
+      // Validate mask quality with detailed logging per Clipdrop requirements
       double whitePercentage = (whitePixelCount / totalPixels) * 100;
-      print('=== MASK CREATION DEBUG ===');
+      print('=== CLIPDROP MASK CREATION DEBUG ===');
       print('Original image: ${originalImg.width}x${originalImg.height} pixels');
       print('Display size: ${_imageDisplaySize!.width}x${_imageDisplaySize!.height}');
       print('Scale factors: scaleX=${scaleX.toStringAsFixed(2)}, scaleY=${scaleY.toStringAsFixed(2)}');
       print('Paths drawn: ${_paths.length}');
-      print('Brush size: $_brushSize (display) -> ${(_brushSize * math.min(scaleX, scaleY) * 0.5).round()} (image)');
-      print('White pixels (remove): $whitePixelCount (${whitePercentage.toStringAsFixed(2)}%)');
-      print('Black pixels (keep): ${totalPixels - whitePixelCount} (${(100 - whitePercentage).toStringAsFixed(2)}%)');
+      final baseBrush = (_brushSize * math.min(scaleX, scaleY) * 0.5).round();
+      final expandedBrush = (baseBrush * 1.15).round();
+      print('Brush size: $_brushSize (display) -> $baseBrush (base) -> $expandedBrush (expanded +15%)');
+      print('White pixels (255=remove): $whitePixelCount (${whitePercentage.toStringAsFixed(2)}%)');
+      print('Black pixels (0=keep): ${totalPixels - whitePixelCount} (${(100 - whitePercentage).toStringAsFixed(2)}%)');
       
       // Safety check - if more than 50% is white, likely accidental full removal
       if (whitePercentage > 50.0) {
@@ -170,21 +181,24 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
         throw Exception('Không phát hiện vùng vẽ. Vui lòng vẽ trên những vùng cần xóa.');
       }
       
-      // Check minimum mask coverage (at least 0.1% to be effective)
-      if (whitePercentage < 0.1) {
+      // Check minimum mask coverage (at least 0.05% to be effective)
+      if (whitePercentage < 0.05) {
         print('WARNING: Mask rất nhỏ (${whitePercentage.toStringAsFixed(3)}%), có thể không hiệu quả');
       }
 
-      // Save mask file as PNG
+      // Save mask as PNG with exact dimensions as per Clipdrop API requirements
       final directory = await getTemporaryDirectory();
-      final maskFile = File('${directory.path}/cleanup_mask_${DateTime.now().millisecondsSinceEpoch}.png');
-      final maskPngBytes = img.encodePng(binaryMask);
+      final maskFile = File('${directory.path}/clipdrop_mask_${DateTime.now().millisecondsSinceEpoch}.png');
+      
+      // Encode as grayscale PNG (black=0, white=255 only, no grey values)
+      final maskPngBytes = img.encodePng(binaryMask, level: 0); // No compression for pure binary data
       await maskFile.writeAsBytes(maskPngBytes);
 
-      print('Mask file saved: ${maskFile.path}');
+      print('Clipdrop mask saved: ${maskFile.path}');
       print('Mask file size: ${maskPngBytes.length} bytes');
+      print('Mask format: PNG, ${originalImg.width}x${originalImg.height}, grayscale, binary (0/255 only)');
       
-      // Validate saved mask file
+      // Validate saved mask meets Clipdrop requirements
       final savedMask = img.decodePng(maskPngBytes);
       if (savedMask == null) {
         throw Exception('Lỗi: Không thể tạo file mask PNG hợp lệ');

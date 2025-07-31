@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../providers/image_provider.dart';
 import '../services/clipdrop_service.dart';
 import 'mask_drawing_screen.dart';
+import 'precision_mask_painter.dart';
 import '../screens/object_removal_screen.dart';
 
 enum InputType {
@@ -630,11 +631,84 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
   }
 
   void _showMaskDialog(Feature feature) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ObjectRemovalScreen(
-          imageFile: widget.originalImage,
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Chọn Phương Pháp Vẽ Mask'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Chọn phương pháp vẽ mask phù hợp với nhu cầu của bạn:',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            
+            // Standard Method
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.brush, color: Colors.blue),
+                title: const Text('Phương Pháp Chuẩn'),
+                subtitle: const Text('UI đầy đủ, phù hợp cho hầu hết người dùng'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ObjectRemovalScreen(
+                        imageFile: widget.originalImage,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Precision Method 
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.green.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.precision_manufacturing, color: Colors.green),
+                title: const Text('Phương Pháp Chính Xác'),
+                subtitle: const Text('Bitmap mask, theo đúng yêu cầu Clipdrop API'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => PrecisionMaskPainter(
+                        originalImage: widget.originalImage,
+                        brushSize: 20.0,
+                        onMaskCreated: (maskFile) {
+                          final provider = context.read<ImageEditProvider>();
+                          provider.processImageWithMask(
+                            ProcessingOperation.cleanup,
+                            widget.originalImage,
+                            maskFile,
+                          );
+                          Navigator.of(context).pop(); // Return to main screen
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+        ],
       ),
     );
   }
