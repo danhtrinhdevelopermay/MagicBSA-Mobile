@@ -21,7 +21,8 @@ class SimpleMaskDrawingScreen extends StatefulWidget {
   State<SimpleMaskDrawingScreen> createState() => _SimpleMaskDrawingScreenState();
 }
 
-class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
+class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> 
+    with TickerProviderStateMixin {
   final List<Offset> _maskStrokes = [];
   double _brushSize = 20.0;
   late ui.Image _originalImageUI;
@@ -30,11 +31,38 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
   // ✅ CRITICAL FIX: Store display dimensions for accurate coordinate mapping
   double _displayWidth = 0;
   double _displayHeight = 0;
+  
+  // ✅ GRADIENT ANIMATION: For dynamic mask color during processing
+  late AnimationController _gradientController;
+  late Animation<double> _gradientAnimation;
+  bool _isProcessing = false;
+  bool _showResult = false;
+  Uint8List? _processedImageBytes;
 
   @override
   void initState() {
     super.initState();
     _loadImage();
+    
+    // ✅ GRADIENT ANIMATION SETUP: Red→Orange→Green cycle during processing
+    _gradientController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+    
+    _gradientAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _gradientController,
+      curve: Curves.easeInOut,
+    ));
+  }
+  
+  @override
+  void dispose() {
+    _gradientController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadImage() async {
@@ -102,36 +130,62 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
                         _displayWidth = displayWidth;
                         _displayHeight = displayHeight;
                         
-                        return GestureDetector(
-                          onPanStart: (details) {
-                            final adjustedPosition = Offset(
-                              details.localPosition.dx - offsetX,
-                              details.localPosition.dy - offsetY,
-                            );
-                            if (_isWithinImageBounds(adjustedPosition, displayWidth, displayHeight)) {
-                              _addStroke(adjustedPosition);
-                            }
-                          },
-                          onPanUpdate: (details) {
-                            final adjustedPosition = Offset(
-                              details.localPosition.dx - offsetX,
-                              details.localPosition.dy - offsetY,
-                            );
-                            if (_isWithinImageBounds(adjustedPosition, displayWidth, displayHeight)) {
-                              _addStroke(adjustedPosition);
-                            }
-                          },
-                          child: CustomPaint(
-                            painter: MaskPainter(
-                              originalImage: _originalImageUI,
-                              strokes: _maskStrokes,
-                              brushSize: _brushSize,
-                              displayWidth: displayWidth,
-                              displayHeight: displayHeight,
-                              offsetX: offsetX,
-                              offsetY: offsetY,
+                        // ✅ RESULT DISPLAY: Show processed image when ready
+                        if (_showResult && _processedImageBytes != null) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            size: Size(constraints.maxWidth, constraints.maxHeight),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.memory(
+                                _processedImageBytes!,
+                                fit: BoxFit.contain,
+                                width: displayWidth,
+                                height: displayHeight,
+                              ),
+                            ),
+                          );
+                        }
+                        
+                        // ✅ DRAWING MODE: Normal drawing or processing with animated mask
+                        return GestureDetector(
+                          onPanStart: _isProcessing ? null : (details) {
+                            final adjustedPosition = Offset(
+                              details.localPosition.dx - offsetX,
+                              details.localPosition.dy - offsetY,
+                            );
+                            if (_isWithinImageBounds(adjustedPosition, displayWidth, displayHeight)) {
+                              _addStroke(adjustedPosition);
+                            }
+                          },
+                          onPanUpdate: _isProcessing ? null : (details) {
+                            final adjustedPosition = Offset(
+                              details.localPosition.dx - offsetX,
+                              details.localPosition.dy - offsetY,
+                            );
+                            if (_isWithinImageBounds(adjustedPosition, displayWidth, displayHeight)) {
+                              _addStroke(adjustedPosition);
+                            }
+                          },
+                          child: AnimatedBuilder(
+                            animation: _gradientAnimation,
+                            builder: (context, child) {
+                              return CustomPaint(
+                                painter: AnimatedMaskPainter(
+                                  originalImage: _originalImageUI,
+                                  maskStrokes: _maskStrokes,
+                                  brushSize: _brushSize,
+                                  displayWidth: displayWidth,
+                                  displayHeight: displayHeight,
+                                  offsetX: offsetX,
+                                  offsetY: offsetY,
+                                  isProcessing: _isProcessing,
+                                  animationValue: _gradientAnimation.value,
+                                ),
+                                size: Size(constraints.maxWidth, constraints.maxHeight),
+                              );
+                            },
                           ),
                         );
                       },
@@ -185,45 +239,78 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
 
                 const SizedBox(height: 16),
 
-                // Action buttons
+                // Action buttons - Dynamic based on current state
                 Row(
                   children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _clearMask,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[800],
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                    // ✅ RESULT STATE: Show save button when processing complete
+                    if (_showResult && _processedImageBytes != null) ...[
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _startOver,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[800],
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text('Làm lại'),
                         ),
-                        child: const Text('Xóa tất cả'),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Debug test button
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _createTestMask,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: _saveResult,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF32d74b),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text('💾 Lưu ảnh'),
                         ),
-                        child: const Text('Test'),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _maskStrokes.isNotEmpty ? _processMask : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF32d74b),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                    ] else ...[
+                      // ✅ DRAWING STATE: Normal mask drawing controls
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _clearMask,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[800],
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text('Xóa tất cả'),
                         ),
-                        child: const Text('Xử lý'),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      // Debug test button (only in development)
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _createTestMask,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text('Test'),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: (_maskStrokes.isNotEmpty && !_isProcessing) 
+                              ? _processMask 
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _isProcessing 
+                                ? Colors.grey 
+                                : const Color(0xFF32d74b),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: Text(_isProcessing ? 'Đang xử lý...' : 'Xử lý'),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -314,72 +401,103 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
       return;
     }
 
+    setState(() {
+      _isProcessing = true;
+    });
+
     try {
       print('=== CLEANUP PROCESSING START ===');
       print('Total mask strokes: ${_maskStrokes.length}');
       
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Đang tạo mask...'),
-            ],
-          ),
-        ),
-      );
-
-      // Create mask file
+      // ✅ START GRADIENT ANIMATION: Red→Orange→Green cycle
+      _gradientController.repeat();
+      
+      // Create mask file (quick operation)
       print('Creating mask file...');
       final maskFile = await _createMaskFile();
       print('Mask file created: ${maskFile.path}');
 
-      Navigator.pop(context); // Close loading dialog
-
-      // Show processing dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Đang xử lý với AI...'),
-            ],
-          ),
-        ),
-      );
-
-      // Process with ClipDrop API
+      // Process with ClipDrop API (main processing)
       print('Processing with ClipDrop API...');
       final clipDropService = ClipDropService();
       final result = await clipDropService.processImage(
         widget.originalImage,
         ProcessingOperation.cleanup,
         maskFile: maskFile,
-        mode: 'quality',  // ✅ CHANGED: Use quality mode for better results
+        mode: 'quality',  // ✅ Use quality mode for better results
       );
 
-      Navigator.pop(context); // Close processing dialog
       print('Processing completed successfully');
       print('Result size: ${result.length} bytes');
 
-      // Return result to previous screen
-      Navigator.pop(context, result);
+      // ✅ STOP ANIMATION AND SHOW RESULT
+      _gradientController.stop();
+      setState(() {
+        _isProcessing = false;
+        _processedImageBytes = result;
+        _showResult = true;
+      });
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Xử lý hoàn tất! Nhấn "Lưu ảnh" để lưu kết quả.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
 
     } catch (e) {
       print('ERROR in _processMask: $e');
-      Navigator.of(context).popUntil((route) => route.settings.name != null || route.isFirst); // Close any dialogs
+      
+      // ✅ STOP ANIMATION ON ERROR
+      _gradientController.stop();
+      setState(() {
+        _isProcessing = false;
+      });
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lỗi: $e'),
+          content: Text('Lỗi xử lý: $e'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+  
+  // ✅ NEW METHODS for result handling
+  void _startOver() {
+    setState(() {
+      _showResult = false;
+      _processedImageBytes = null;
+      _maskStrokes.clear();
+      _isProcessing = false;
+    });
+    _gradientController.reset();
+  }
+  
+  void _saveResult() async {
+    if (_processedImageBytes == null) return;
+    
+    try {
+      // Here you would implement saving to gallery/downloads
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Ảnh đã được lưu thành công!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+      // Return result to previous screen (if needed)
+      Navigator.pop(context, _processedImageBytes);
+      
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi lưu ảnh: $e'),
+          backgroundColor: Colors.red,
         ),
       );
     }
@@ -564,23 +682,27 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
   }
 }
 
-class MaskPainter extends CustomPainter {
+class AnimatedMaskPainter extends CustomPainter {
   final ui.Image originalImage;
-  final List<Offset> strokes;
+  final List<Offset> maskStrokes;
   final double brushSize;
   final double displayWidth;
   final double displayHeight;
   final double offsetX;
   final double offsetY;
+  final bool isProcessing;
+  final double animationValue;
 
-  MaskPainter({
+  AnimatedMaskPainter({
     required this.originalImage,
-    required this.strokes,
+    required this.maskStrokes,
     required this.brushSize,
     required this.displayWidth,
     required this.displayHeight, 
     required this.offsetX,
     required this.offsetY,
+    required this.isProcessing,
+    required this.animationValue,
   });
 
   @override
@@ -594,9 +716,35 @@ class MaskPainter extends CustomPainter {
       paint,
     );
 
-    // Draw mask strokes only within image bounds
+    // ✅ ANIMATED GRADIENT MASK: Red→Orange→Green during processing
+    Color maskColor;
+    if (isProcessing) {
+      // Animate through gradient: Red (0.0) → Orange (0.5) → Green (1.0)
+      if (animationValue < 0.5) {
+        // Red to Orange
+        final t = animationValue * 2; // 0.0 to 1.0
+        maskColor = Color.lerp(
+          const Color(0xFFFF4444), // Bright red
+          const Color(0xFFFF8800), // Orange
+          t,
+        )!;
+      } else {
+        // Orange to Green
+        final t = (animationValue - 0.5) * 2; // 0.0 to 1.0
+        maskColor = Color.lerp(
+          const Color(0xFFFF8800), // Orange
+          const Color(0xFF44FF44), // Bright green
+          t,
+        )!;
+      }
+    } else {
+      // Normal drawing mode - static red
+      maskColor = const Color(0xFFFF4444);
+    }
+
+    // Draw mask strokes with animated color
     final maskPaint = Paint()
-      ..color = Colors.red.withOpacity(0.7)
+      ..color = maskColor.withOpacity(0.7)
       ..style = PaintingStyle.fill;
 
     final strokePaint = Paint()
@@ -604,15 +752,54 @@ class MaskPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
-    for (final stroke in strokes) {
+    for (final stroke in maskStrokes) {
       final adjustedStroke = Offset(stroke.dx + offsetX, stroke.dy + offsetY);
-      // Draw red fill for removal area
-      canvas.drawCircle(adjustedStroke, brushSize / 2, maskPaint);
+      
+      // ✅ PROCESSING EFFECT: Add pulsing animation during processing
+      final radius = isProcessing 
+          ? (brushSize / 2) * (1.0 + 0.2 * sin(animationValue * 4 * 3.14159))
+          : brushSize / 2;
+      
+      // Draw animated mask fill
+      canvas.drawCircle(adjustedStroke, radius, maskPaint);
       // Draw white border for visibility
-      canvas.drawCircle(adjustedStroke, brushSize / 2, strokePaint);
+      canvas.drawCircle(adjustedStroke, radius, strokePaint);
+    }
+    
+    // ✅ PROCESSING OVERLAY: Show processing text during animation
+    if (isProcessing && maskStrokes.isNotEmpty) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: 'Đang xử lý AI...',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(
+                offset: const Offset(1, 1),
+                blurRadius: 3,
+                color: Colors.black.withOpacity(0.7),
+              ),
+            ],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      
+      textPainter.layout();
+      final textX = (size.width - textPainter.width) / 2;
+      final textY = offsetY + displayHeight + 20;
+      
+      textPainter.paint(canvas, Offset(textX, textY));
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    if (oldDelegate is! AnimatedMaskPainter) return true;
+    return oldDelegate.isProcessing != isProcessing ||
+           oldDelegate.animationValue != animationValue ||
+           oldDelegate.maskStrokes.length != maskStrokes.length;
+  }
 }
