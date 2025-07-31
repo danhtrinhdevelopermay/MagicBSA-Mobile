@@ -1,77 +1,97 @@
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class BottomNavigationWidget extends StatelessWidget {
-  const BottomNavigationWidget({super.key});
+  final int currentIndex;
+  final Function(int) onTap;
+  
+  const BottomNavigationWidget({
+    super.key,
+    this.currentIndex = 0,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 80,
+      height: 90,
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFe2e8f0), width: 1),
-        ),
+        // Removed border for seamless look
       ),
       child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(
-              icon: Icons.home,
-              label: 'Trang chủ',
-              isActive: true,
-              onTap: () {},
-            ),
-            _buildNavItem(
-              icon: Icons.history,
-              label: 'Lịch sử',
-              isActive: false,
-              onTap: () {},
-            ),
-            _buildNavItem(
-              icon: Icons.star,
-              label: 'Premium',
-              isActive: false,
-              onTap: () {},
-            ),
-            _buildNavItem(
-              icon: Icons.person,
-              label: 'Hồ sơ',
-              isActive: false,
-              onTap: () {},
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                icon: PhosphorIcons.sparkle(),
+                iconFilled: PhosphorIcons.sparkle(PhosphorIconsStyle.fill),
+                label: 'Generation',
+                isActive: currentIndex == 0,
+                onTap: () => onTap(0),
+              ),
+              _buildNavItem(
+                icon: PhosphorIcons.clockCounterClockwise(),
+                iconFilled: PhosphorIcons.clockCounterClockwise(PhosphorIconsStyle.fill),
+                label: 'History',
+                isActive: currentIndex == 1,
+                onTap: () => onTap(1),
+              ),
+              _buildNavItem(
+                icon: PhosphorIcons.crown(),
+                iconFilled: PhosphorIcons.crown(PhosphorIconsStyle.fill),
+                label: 'Premium',
+                isActive: currentIndex == 2,
+                onTap: () => onTap(2),
+              ),
+              _buildNavItem(
+                icon: PhosphorIcons.user(),
+                iconFilled: PhosphorIcons.user(PhosphorIconsStyle.fill),
+                label: 'Profile',
+                isActive: currentIndex == 3,
+                onTap: () => onTap(3),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildNavItem({
-    required IconData icon,
+    required PhosphorIconData icon,
+    required PhosphorIconData iconFilled,
     required String label,
     required bool isActive,
     required VoidCallback onTap,
   }) {
+    const Color activeColor = Color(0xFF6C3EF5); // Purple color
+    const Color inactiveColor = Color(0xFF6B7280); // Gray color
+    
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: isActive ? const Color(0xFF6366f1) : const Color(0xFF94a3b8),
-              size: 20,
+            PhosphorIcon(
+              isActive ? iconFilled : icon,
+              color: isActive ? activeColor : inactiveColor,
+              size: 24,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                color: isActive ? const Color(0xFF6366f1) : const Color(0xFF94a3b8),
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                color: isActive ? activeColor : inactiveColor,
+                fontFamily: 'SF Pro Display', // Modern sans-serif font
+                letterSpacing: -0.1,
               ),
             ),
           ],

@@ -50,7 +50,13 @@ class HomeScreen extends StatelessWidget {
                     ),
                     
                     // Bottom Navigation with manual padding for system navigation
-                    const BottomNavigationWidget(),
+                    BottomNavigationWidget(
+                      currentIndex: 0,
+                      onTap: (index) {
+                        // Handle navigation to different pages
+                        Navigator.pushReplacementNamed(context, '/main');
+                      },
+                    ),
                     // Add bottom padding for system navigation bar
                     SizedBox(height: MediaQuery.of(context).padding.bottom),
                   ],

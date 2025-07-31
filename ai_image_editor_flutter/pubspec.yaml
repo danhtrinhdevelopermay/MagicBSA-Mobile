@@ -67,6 +67,9 @@ dependencies:
   # Push notifications
   onesignal_flutter: ^5.0.4
   curved_navigation_bar: ^1.0.6
+  
+  # Phosphor Icons for modern icon design
+  phosphor_flutter: ^2.1.0
 
 dev_dependencies:
   flutter_test:

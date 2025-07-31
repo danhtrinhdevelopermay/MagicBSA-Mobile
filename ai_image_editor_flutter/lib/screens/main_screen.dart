@@ -1,13 +1,12 @@
 import 'dart:io';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import '../providers/image_provider.dart';
 import '../widgets/image_upload_widget.dart';
 import '../widgets/loading_overlay_widget.dart';
 import '../widgets/audio_controls_widget.dart';
+import '../widgets/bottom_navigation_widget.dart';
 import '../services/audio_service.dart';
 import 'history_screen.dart';
 import 'premium_screen.dart';
@@ -83,7 +82,7 @@ class _MainScreenState extends State<MainScreen> {
                               left: 16,
                               right: 16,
                               top: 20,
-                              bottom: 100,
+                              bottom: 110,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,12 +184,15 @@ class _MainScreenState extends State<MainScreen> {
                 child: const AudioControlsWidget(),
               ),
               
-              // Custom Bottom Navigation
+              // Modern Bottom Navigation
               Positioned(
-                bottom: 20,
-                left: 20,
-                right: 20,
-                child: _buildCustomBottomNav(),
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: BottomNavigationWidget(
+                  currentIndex: _currentIndex,
+                  onTap: _onTabTapped,
+                ),
               ),
             ],
           ),
@@ -199,129 +201,5 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildCustomBottomNav() {
-    return Container(
-      height: 70,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(4, (index) {
-                return _buildNavItem(index);
-              }),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildNavItem(int index) {
-    final isActive = _currentIndex == index;
-    final icons = [
-      Icons.home_rounded,
-      Icons.history_rounded,
-      Icons.diamond_rounded,
-      Icons.person_rounded,
-    ];
-    final labels = ['Trang chủ', 'Lịch sử', 'Premium', 'Hồ sơ'];
-    
-    return GestureDetector(
-      onTap: () => _onTabTapped(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.elasticOut,
-        padding: EdgeInsets.symmetric(
-          horizontal: isActive ? 16 : 12,
-          vertical: 12,
-        ),
-        decoration: isActive
-            ? BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.white.withOpacity(0.25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              )
-            : null,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              transform: Matrix4.identity()
-                ..scale(isActive ? 1.1 : 0.9)
-                ..rotateZ(isActive ? 0.05 : 0.0),
-              child: Icon(
-                icons[index],
-                color: Colors.white,
-                size: isActive ? 28 : 24,
-                shadows: isActive
-                    ? [
-                        Shadow(
-                          color: Colors.white.withOpacity(0.5),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
-              ),
-            ),
-            if (isActive) ...[
-              const SizedBox(height: 4),
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 300),
-                opacity: isActive ? 1.0 : 0.0,
-                child: Text(
-                  labels[index],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black26,
-                        blurRadius: 4,
-                        offset: Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
 }
