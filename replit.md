@@ -16,6 +16,12 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **UPDATED PACKAGE NAME** - Thay đổi package name từ com.example.ai_image_editor_flutter thành com.brightstartsacademy.ai.twink:
+  - Updated android/app/build.gradle với namespace và applicationId mới
+  - Created new MainActivity.kt trong correct package structure
+  - Removed old package folder structure com/example/ai_image_editor_flutter
+  - Package name giờ là com.brightstartsacademy.ai.twink cho production deployment
+
 ✓ **CRITICAL FIX: COORDINATE MAPPING BUG** - Khắc phục lỗi nghiêm trọng coordinate mapping trong tính năng xóa vật thể:
   - FIXED coordinate mapping issue: user vẽ bên phải nhưng AI xóa bên trái
   - Implemented proper aspect ratio-aware display với LayoutBuilder và offsetX/offsetY calculations
