@@ -14,6 +14,10 @@ Preferred communication style: Simple, everyday language.
 - Khi có thay đổi code thì gửi kèm theo lệnh push git thủ công, push toàn bộ code trong thư mục gốc không cần cd
 - Đảm bảo không ảnh hưởng đến việc build apk khi thay đổi hoặc phát triển ứng dụng
 
+**Developer Notes:**
+- Always provide manual Git push commands from root directory when making code changes
+- Ensure changes don't affect APK build process for GitHub Actions
+
 Focus on practical, working solutions. solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
