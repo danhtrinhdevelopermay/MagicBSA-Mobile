@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import '../widgets/image_upload_widget.dart';
+import '../services/video_preload_service.dart';
 
 class GenerationScreen extends StatefulWidget {
   const GenerationScreen({super.key});
@@ -11,11 +12,13 @@ class GenerationScreen extends StatefulWidget {
 }
 
 class _GenerationScreenState extends State<GenerationScreen> {
+  final VideoPreloadService _videoService = VideoPreloadService();
+  bool _serviceReady = false;
   final List<FeatureModel> features = [
     FeatureModel(
       id: 'remove_background',
       title: 'Xóa nền ảnh',
-      description: 'Loại bỏ nền ảnh một cách tự động và chính xác với AI',
+      description: 'Tự động loại bỏ nền ảnh với độ chính xác cao, giữ nguyên đối tượng chính. Hỗ trợ đa dạng loại ảnh từ chân dung, sản phẩm đến động vật.',
       videoPath: 'assets/videos/remove_background.mp4',
       icon: Icons.layers_clear_rounded,
       gradient: const LinearGradient(
@@ -27,7 +30,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
     FeatureModel(
       id: 'expand_image',
       title: 'Mở rộng ảnh',
-      description: 'Mở rộng khung hình và tạo nội dung mới xung quanh ảnh',
+      description: 'Mở rộng khung hình thông minh, tự động tạo nội dung phù hợp xung quanh ảnh gốc. Lý tưởng cho việc thay đổi tỷ lệ và tạo không gian mới.',
       videoPath: 'assets/videos/expand_image.mp4',
       icon: Icons.crop_free_rounded,
       gradient: const LinearGradient(
@@ -39,7 +42,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
     FeatureModel(
       id: 'upscaling',
       title: 'Nâng cấp độ phân giải',
-      description: 'Tăng chất lượng và độ phân giải ảnh lên gấp nhiều lần',
+      description: 'Tăng độ phân giải ảnh lên 2x, 4x với AI tiên tiến. Khôi phục chi tiết mất mát, làm sắc nét và cải thiện chất lượng ảnh cũ.',
       videoPath: 'assets/videos/upscaling.mp4',
       icon: Icons.high_quality_rounded,
       gradient: const LinearGradient(
@@ -51,7 +54,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
     FeatureModel(
       id: 'cleanup',
       title: 'Làm sạch ảnh',
-      description: 'Loại bỏ các đối tượng không mong muốn khỏi ảnh',
+      description: 'Xóa bỏ đối tượng không mong muốn như người, vật thể, bóng râm. AI tự động lấp đầy vùng trống một cách tự nhiên và hài hòa.',
       videoPath: 'assets/videos/cleanup.mp4',
       icon: Icons.cleaning_services_rounded,
       gradient: const LinearGradient(
@@ -62,8 +65,8 @@ class _GenerationScreenState extends State<GenerationScreen> {
     ),
     FeatureModel(
       id: 'remove_text',
-      title: 'Xóa chữ',
-      description: 'Loại bỏ văn bản và watermark khỏi ảnh một cách thông minh',
+      title: 'Xóa chữ và watermark',
+      description: 'Loại bỏ hoàn toàn văn bản, logo, watermark khỏi ảnh. Công nghệ AI phục hồi nền một cách tự nhiên, không để lại dấu vết.',
       videoPath: 'assets/videos/remove_text.mp4',
       icon: Icons.text_fields_rounded,
       gradient: const LinearGradient(
@@ -74,8 +77,8 @@ class _GenerationScreenState extends State<GenerationScreen> {
     ),
     FeatureModel(
       id: 'reimagine',
-      title: 'Tái tạo ảnh',
-      description: 'Tạo ra phiên bản mới của ảnh với phong cách khác biệt',
+      title: 'Tái tạo ảnh sáng tạo',
+      description: 'Tạo ra những phiên bản hoàn toàn mới của ảnh với phong cách nghệ thuật khác biệt. Biến ảnh thường thành tác phẩm nghệ thuật độc đáo.',
       videoPath: 'assets/videos/reimagine.mp4',
       icon: Icons.auto_fix_high_rounded,
       gradient: const LinearGradient(
@@ -87,7 +90,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
     FeatureModel(
       id: 'text_to_image',
       title: 'Tạo ảnh từ văn bản',
-      description: 'Tạo ra hình ảnh hoàn toàn mới từ mô tả bằng văn bản',
+      description: 'Biến ý tưởng thành hình ảnh chỉ bằng mô tả văn bản. Tạo ra những bức ảnh nghệ thuật, minh họa hoặc khái niệm hoàn toàn từ trí tưởng tượng.',
       videoPath: 'assets/videos/text_to_image.mp4',
       icon: Icons.image_rounded,
       gradient: const LinearGradient(
@@ -97,6 +100,24 @@ class _GenerationScreenState extends State<GenerationScreen> {
       ),
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkVideoService();
+  }
+
+  void _checkVideoService() async {
+    if (!_videoService.isInitialized) {
+      await _videoService.preloadAllVideos();
+    }
+    
+    if (mounted) {
+      setState(() {
+        _serviceReady = _videoService.isInitialized;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -185,27 +206,92 @@ class _GenerationScreenState extends State<GenerationScreen> {
               ),
             ),
 
-            // Feature Grid
+            // Feature Grid or Loading
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.8,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final feature = features[index];
-                    return FeatureCard(
-                      feature: feature,
-                      onTap: () => _onFeatureTap(feature),
-                    );
-                  },
-                  childCount: features.length,
-                ),
-              ),
+              sliver: _serviceReady 
+                ? SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.75,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final feature = features[index];
+                        return FeatureCard(
+                          feature: feature,
+                          videoController: _videoService.getController(feature.id),
+                          isVideoReady: _serviceReady,
+                          onTap: () => _onFeatureTap(feature),
+                        );
+                      },
+                      childCount: features.length,
+                    ),
+                  )
+                : SliverToBoxAdapter(
+                    child: Container(
+                      height: 400,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: const Icon(
+                                Icons.movie_creation_outlined,
+                                color: Colors.white,
+                                size: 30,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Đang tải video demo...',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Vui lòng chờ một chút',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Container(
+                              width: 200,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(2),
+                                child: const LinearProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                                  backgroundColor: Colors.transparent,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
             ),
 
             // Bottom padding
@@ -229,53 +315,19 @@ class _GenerationScreenState extends State<GenerationScreen> {
   }
 }
 
-class FeatureCard extends StatefulWidget {
+class FeatureCard extends StatelessWidget {
   final FeatureModel feature;
+  final VideoPlayerController? videoController;
+  final bool isVideoReady;
   final VoidCallback onTap;
 
   const FeatureCard({
     super.key,
     required this.feature,
+    this.videoController,
+    required this.isVideoReady,
     required this.onTap,
   });
-
-  @override
-  State<FeatureCard> createState() => _FeatureCardState();
-}
-
-class _FeatureCardState extends State<FeatureCard> {
-  VideoPlayerController? _controller;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeVideo();
-  }
-
-  void _initializeVideo() async {
-    try {
-      _controller = VideoPlayerController.asset(widget.feature.videoPath);
-      await _controller!.initialize();
-      _controller!.setLooping(true);
-      _controller!.setVolume(0); // Mute the video
-      _controller!.play();
-      
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
-    } catch (e) {
-      print('Error initializing video: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +350,7 @@ class _FeatureCardState extends State<FeatureCard> {
           children: [
             // Video Container
             Expanded(
-              flex: 3,
+              flex: 2,
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -313,18 +365,18 @@ class _FeatureCardState extends State<FeatureCard> {
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
-                  child: _isInitialized && _controller != null
+                  child: isVideoReady && videoController != null
                       ? AspectRatio(
-                          aspectRatio: _controller!.value.aspectRatio,
-                          child: VideoPlayer(_controller!),
+                          aspectRatio: videoController!.value.aspectRatio,
+                          child: VideoPlayer(videoController!),
                         )
                       : Container(
                           decoration: BoxDecoration(
-                            gradient: widget.feature.gradient,
+                            gradient: feature.gradient,
                           ),
                           child: Center(
                             child: Icon(
-                              widget.feature.icon,
+                              feature.icon,
                               size: 40,
                               color: Colors.white.withOpacity(0.8),
                             ),
@@ -336,7 +388,7 @@ class _FeatureCardState extends State<FeatureCard> {
 
             // Content
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -347,11 +399,11 @@ class _FeatureCardState extends State<FeatureCard> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            gradient: widget.feature.gradient,
+                            gradient: feature.gradient,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            widget.feature.icon,
+                            feature.icon,
                             size: 16,
                             color: Colors.white,
                           ),
@@ -359,13 +411,13 @@ class _FeatureCardState extends State<FeatureCard> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            widget.feature.title,
+                            feature.title,
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF1F2937),
                             ),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -374,13 +426,13 @@ class _FeatureCardState extends State<FeatureCard> {
                     const SizedBox(height: 8),
                     Expanded(
                       child: Text(
-                        widget.feature.description,
+                        feature.description,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: Colors.grey[600],
-                          height: 1.3,
+                          height: 1.2,
                         ),
-                        maxLines: 3,
+                        maxLines: 4,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

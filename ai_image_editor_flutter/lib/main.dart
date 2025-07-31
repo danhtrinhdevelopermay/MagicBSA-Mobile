@@ -5,6 +5,7 @@ import 'screens/splash_screen.dart';
 import 'providers/image_provider.dart';
 import 'services/audio_service.dart';
 import 'services/onesignal_service.dart';
+import 'services/video_preload_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +36,13 @@ void main() async {
 // ✅ BACKGROUND SERVICE INITIALIZATION: No blocking main thread
 void _initializeServicesInBackground() async {
   try {
+    // Initialize video service first (highest priority for UX)
+    VideoPreloadService().preloadAllVideos().then((_) {
+      print('✅ Video preload service ready');
+    }).catchError((e) {
+      print('❌ Video preload failed: $e');
+    });
+    
     // Initialize audio service in background (non-blocking)
     AudioService().initialize().then((_) {
       // Start background music after initialization (optional)
