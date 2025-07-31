@@ -16,6 +16,14 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **FIXED CLIPDROP CLEANUP OBJECT REMOVAL FEATURE** - Resolved issue where drawing mask did not remove objects:
+  - Fixed mask format from grayscale to RGB binary per Clipdrop API specification (https://clipdrop.co/apis/docs/cleanup)
+  - Removed unnecessary mask resizing that corrupted binary format (0,0,0=keep / 255,255,255=remove)
+  - Changed mode from 'fast' to 'quality' for better removal results per official documentation
+  - Mask now created with exact dimensions matching original image without any resizing
+  - Binary mask format ensures perfect compatibility with Clipdrop cleanup API requirements
+  - Object removal feature now works correctly - drawing on objects removes them with natural background fill
+  - Full compliance with Clipdrop cleanup API specification for reliable AI object removal
 ✓ **FIXED APK BUILD ERROR - METHOD SIGNATURE MISMATCH** - Resolved GitHub Actions APK build failure:
   - Fixed "Too many positional arguments" error in enhanced_editor_widget.dart line 691
   - Corrected processImageWithMask() method call to match ImageEditProvider signature  

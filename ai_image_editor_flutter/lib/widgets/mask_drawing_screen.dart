@@ -101,11 +101,11 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
       final img.Image binaryMask = img.Image(
         width: originalImg.width,
         height: originalImg.height,
-        numChannels: 1, // Grayscale for PNG output
+        numChannels: 3, // RGB format for better compatibility
       );
 
-      // Fill with pure black (0 = keep as per Clipdrop API documentation)
-      img.fill(binaryMask, color: img.ColorUint8(0));
+      // Fill with pure black (0,0,0 = keep as per Clipdrop API documentation)
+      img.fill(binaryMask, color: img.ColorRgb8(0, 0, 0));
 
       // Count pixels to validate mask
       int whitePixelCount = 0;
@@ -148,8 +148,8 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
               if (pixelX >= 0 && pixelX < originalImg.width && 
                   pixelY >= 0 && pixelY < originalImg.height &&
                   (dx * dx + dy * dy) <= (expandedBrushRadius * expandedBrushRadius)) {
-                // Set pure white (255) for removal as per Clipdrop documentation
-                binaryMask.setPixel(pixelX, pixelY, img.ColorUint8(255));
+                // Set pure white (255,255,255) for removal as per Clipdrop documentation
+                binaryMask.setPixel(pixelX, pixelY, img.ColorRgb8(255, 255, 255));
                 whitePixelCount++;
               }
             }
@@ -190,13 +190,13 @@ class _MaskDrawingScreenState extends State<MaskDrawingScreen> {
       final directory = await getTemporaryDirectory();
       final maskFile = File('${directory.path}/clipdrop_mask_${DateTime.now().millisecondsSinceEpoch}.png');
       
-      // Encode as grayscale PNG (black=0, white=255 only, no grey values)
+      // Encode as RGB PNG (black=0,0,0 white=255,255,255 only, no grey values per Clipdrop spec)
       final maskPngBytes = img.encodePng(binaryMask, level: 0); // No compression for pure binary data
       await maskFile.writeAsBytes(maskPngBytes);
 
       print('Clipdrop mask saved: ${maskFile.path}');
       print('Mask file size: ${maskPngBytes.length} bytes');
-      print('Mask format: PNG, ${originalImg.width}x${originalImg.height}, grayscale, binary (0/255 only)');
+      print('Mask format: PNG, ${originalImg.width}x${originalImg.height}, RGB, binary (0,0,0/255,255,255 only)');
       
       // Validate saved mask meets Clipdrop requirements
       final savedMask = img.decodePng(maskPngBytes);

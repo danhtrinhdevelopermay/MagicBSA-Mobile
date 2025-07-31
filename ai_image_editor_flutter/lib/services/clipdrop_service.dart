@@ -222,19 +222,19 @@ class ClipDropService {
       switch (operation) {
         case ProcessingOperation.cleanup:
           if (maskFile != null) {
-            // Resize mask file to match processed image dimensions if needed
-            final resizedMaskFile = await _resizeImageForOperation(maskFile, operation);
+            // Use mask file as-is without resizing (already created with correct dimensions)
             formData.files.add(MapEntry(
               'mask_file',
               await MultipartFile.fromFile(
-                resizedMaskFile.path,
+                maskFile.path,
                 filename: 'mask.png', // Force PNG extension for mask
               ),
             ));
-            // Add mode parameter - using fast mode for better response  
-            formData.fields.add(MapEntry('mode', 'fast'));
+            // Add mode parameter - using quality mode for better results as per Clipdrop docs
+            formData.fields.add(MapEntry('mode', 'quality'));
             print('Cleanup API call with mask: ${maskFile.path}');
-            print('Mode: fast (faster processing, good quality)');
+            print('Mode: quality (slower processing, better results)');
+            print('Mask file used without resizing (already correct dimensions)');
           } else {
             throw Exception('Cleanup operation requires a mask file');
           }
