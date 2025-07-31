@@ -73,7 +73,7 @@ class ImageEditProvider extends ChangeNotifier {
   // Process image with specific operation
   Future<void> processImage(
     ProcessingOperation operation, {
-
+    File? maskFile,
     File? backgroundFile,
     String? prompt,
     String? scene,
@@ -84,6 +84,7 @@ class ImageEditProvider extends ChangeNotifier {
     int? seed,
     int? targetWidth,
     int? targetHeight,
+    String? mode,
   }) async {
     if (_originalImage == null && operation != ProcessingOperation.textToImage) return;
     
@@ -96,7 +97,9 @@ class ImageEditProvider extends ChangeNotifier {
         case ProcessingOperation.removeText:
           operationText = 'Đang xóa văn bản...';
           break;
-
+        case ProcessingOperation.cleanup:
+          operationText = 'Đang dọn dẹp đối tượng...';
+          break;
         case ProcessingOperation.uncrop:
           operationText = 'Đang mở rộng ảnh...';
           break;
@@ -129,7 +132,7 @@ class ImageEditProvider extends ChangeNotifier {
         result = await _clipDropService.processImage(
           _originalImage!, 
           operation, 
-
+          maskFile: maskFile,
           backgroundFile: backgroundFile,
           prompt: prompt,
           scene: scene,
@@ -140,6 +143,7 @@ class ImageEditProvider extends ChangeNotifier {
           seed: seed,
           targetWidth: targetWidth,
           targetHeight: targetHeight,
+          mode: mode,
         );
       }
       
@@ -225,6 +229,12 @@ class ImageEditProvider extends ChangeNotifier {
   void clearProcessedImage() {
     _processedImage = null;
     _setState(ProcessingState.idle);
+  }
+
+  // Set processed image (for external processing results)
+  void setProcessedImage(Uint8List imageData) {
+    _processedImage = imageData;
+    _setState(ProcessingState.completed);
   }
 
   // Clear error
@@ -323,6 +333,8 @@ class ImageEditProvider extends ChangeNotifier {
         return 'Tái tạo ảnh';
       case ProcessingOperation.textToImage:
         return 'Tạo ảnh từ text';
+      case ProcessingOperation.cleanup:
+        return 'Dọn dẹp đối tượng';
       case ProcessingOperation.replaceBackground:
         return 'Thay background';
       case ProcessingOperation.productPhotography:

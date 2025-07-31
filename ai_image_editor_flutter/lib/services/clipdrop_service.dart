@@ -7,7 +7,8 @@ import 'package:image/image.dart' as img;
 
 enum ProcessingOperation {
   removeBackground,
-  removeText, 
+  removeText,
+  cleanup,
   uncrop,
   reimagine,
   replaceBackground,
@@ -20,6 +21,7 @@ class ClipDropService {
   // API endpoints
   static const String _removeBackgroundUrl = 'https://clipdrop-api.co/remove-background/v1';
   static const String _removeTextUrl = 'https://clipdrop-api.co/remove-text/v1';
+  static const String _cleanupUrl = 'https://clipdrop-api.co/cleanup/v1';
 
   static const String _uncropUrl = 'https://clipdrop-api.co/uncrop/v1';
   static const String _reimagineUrl = 'https://clipdrop-api.co/reimagine/v1/reimagine';
@@ -137,7 +139,7 @@ class ClipDropService {
   Future<Uint8List> processImage(
     File imageFile, 
     ProcessingOperation operation, {
-
+    File? maskFile,
     File? backgroundFile,
     String? prompt,
     String? scene,
@@ -148,6 +150,7 @@ class ClipDropService {
     int? seed,
     int? targetWidth,
     int? targetHeight,
+    String? mode,
   }) async {
     // For text-to-image operation, use the dedicated method
     if (operation == ProcessingOperation.textToImage && prompt != null) {
@@ -186,7 +189,9 @@ class ClipDropService {
         case ProcessingOperation.removeText:
           apiUrl = _removeTextUrl;
           break;
-
+        case ProcessingOperation.cleanup:
+          apiUrl = _cleanupUrl;
+          break;
         case ProcessingOperation.uncrop:
           apiUrl = _uncropUrl;
           break;
@@ -217,7 +222,26 @@ class ClipDropService {
 
       // Add operation-specific parameters
       switch (operation) {
-
+        case ProcessingOperation.cleanup:
+          // Add mask file for cleanup operation
+          if (maskFile != null) {
+            formData.files.add(MapEntry(
+              'mask_file',
+              await MultipartFile.fromFile(
+                maskFile.path,
+                filename: 'mask.png',
+              ),
+            ));
+          } else {
+            throw Exception('Cleanup operation requires a mask file');
+          }
+          // Add mode parameter (fast or quality)
+          if (mode != null && (mode == 'fast' || mode == 'quality')) {
+            formData.fields.add(MapEntry('mode', mode));
+          } else {
+            formData.fields.add(MapEntry('mode', 'fast')); // Default to fast mode
+          }
+          break;
         
         case ProcessingOperation.uncrop:
           if (extendLeft != null && extendLeft > 0) {
@@ -405,6 +429,15 @@ class ClipDropService {
     );
   }
 
+  Future<Uint8List> cleanup(File imageFile, File maskFile, {String? mode}) async {
+    return processImage(
+      imageFile, 
+      ProcessingOperation.cleanup,
+      maskFile: maskFile,
+      mode: mode ?? 'fast',
+    );
+  }
+
   // Special method for text-to-image that doesn't require an input image
   Future<Uint8List> generateImageFromText(String prompt) async {
     // Reload API keys if not initialized
@@ -472,6 +505,11 @@ class ClipDropService {
         // 25 megapixels = 5000x5000 approximately
         maxWidth = maxHeight = 5000;
         operationName = 'Remove Background';
+        break;
+      case ProcessingOperation.cleanup:
+        // 16 megapixels = 4000x4000 approximately (according to Clipdrop docs)
+        maxWidth = maxHeight = 4000;
+        operationName = 'Cleanup';
         break;
 
       case ProcessingOperation.uncrop:

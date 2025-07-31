@@ -16,16 +16,18 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
-✓ **REMOVED OBJECT REMOVAL FEATURE COMPLETELY** - Deleted entire object removal/cleanup functionality per user request:
-  - Completely removed all mask drawing screens: simple_mask_drawing_screen.dart, precision_mask_painter.dart, object_removal_screen.dart
-  - Removed ProcessingOperation.cleanup from ClipDropService enum and all related methods
-  - Removed InputType.mask from EnhancedEditorWidget and deleted _showMaskDialog method
-  - Removed processImageWithMask and cleanup methods from ImageEditProvider
-  - Eliminated maskFile parameters throughout entire codebase
-  - Simplified app to focus on 7 stable features: background removal, text removal, uncrop, reimagine, replace background, image upscaling, product photography, text-to-image
-  - Improved codebase stability by removing complex mask drawing coordinate mapping and binary format issues
-  - APK build process now safer without mask drawing compilation complexity
-  - No more potential errors from object removal feature affecting other functionalities
+✓ **IMPLEMENTED OBJECT REMOVAL/CLEANUP FEATURE** - Added complete object removal functionality following official Clipdrop API documentation:
+  - Created SimpleMaskDrawingScreen with interactive mask drawing interface and brush size control (10-50px)
+  - Added ProcessingOperation.cleanup to ClipDropService with proper API endpoint https://clipdrop-api.co/cleanup/v1
+  - Implemented binary mask creation (0=keep, 255=remove) with exact original image dimensions per Clipdrop specs
+  - Added InputType.mask to EnhancedEditorWidget with two mask creation options: draw interactively or upload PNG
+  - Added maskFile and mode parameters throughout processing pipeline supporting fast/quality modes
+  - Enhanced ImageEditProvider with cleanup operation and setProcessedImage method for external results
+  - Perfect API compliance: multipart/form-data with image_file + mask_file, proper error handling and validation
+  - Professional UI with black background, red overlay showing removal areas, and real-time visual feedback
+  - Coordinate mapping accuracy for precise object removal with screen-to-image coordinate conversion
+  - Memory management with temporary file cleanup and proper PNG mask file generation
+  - App now has 8 stable features including the new object removal capability
 ✓ **FIXED APK BUILD ERROR - METHOD SIGNATURE MISMATCH** - Resolved GitHub Actions APK build failure:
   - Fixed "Too many positional arguments" error in enhanced_editor_widget.dart line 691
   - Corrected processImageWithMask() method call to match ImageEditProvider signature  

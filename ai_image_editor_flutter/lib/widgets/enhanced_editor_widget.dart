@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/image_provider.dart';
 import '../services/clipdrop_service.dart';
+import 'simple_mask_drawing_screen.dart';
 
 
 enum InputType {
@@ -12,6 +14,7 @@ enum InputType {
   scene,
   scale,
   upscaling,
+  mask,
 }
 
 class Feature {
@@ -101,6 +104,14 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
           subtitle: 'Loại bỏ chữ viết trên ảnh',
           icon: Icons.text_fields_outlined,
           needsInput: false,
+        ),
+        Feature(
+          operation: ProcessingOperation.cleanup,
+          title: 'Dọn dẹp đối tượng',
+          subtitle: 'Xóa vật thể không mong muốn',
+          icon: Icons.cleaning_services,
+          needsInput: true,
+          inputType: InputType.mask,
         ),
       ],
     ),
@@ -378,6 +389,9 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
 
       case InputType.upscaling:
         _showUpscalingDialog(feature, provider);
+        break;
+      case InputType.mask:
+        _showMaskDialog(feature, provider);
         break;
       case InputType.scale:
         // Handle scale input type (for future features)
@@ -746,6 +760,105 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
         ],
       ),
     );
+  }
+
+  void _showMaskDialog(Feature feature, ImageEditProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(feature.title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Chọn cách tạo mask để xóa vật thể:'),
+            const SizedBox(height: 16),
+            
+            // Option 1: Draw mask
+            ListTile(
+              leading: const Icon(Icons.brush),
+              title: const Text('Vẽ vùng cần xóa'),
+              subtitle: const Text('Vẽ trực tiếp trên ảnh'),
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToMaskDrawing(feature, provider);
+              },
+            ),
+            
+            const Divider(),
+            
+            // Option 2: Upload mask image
+            ListTile(
+              leading: const Icon(Icons.upload_file),
+              title: const Text('Tải mask PNG'),
+              subtitle: const Text('Sử dụng ảnh mask có sẵn'),
+              onTap: () {
+                Navigator.pop(context);
+                _uploadMaskFile(feature, provider);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _navigateToMaskDrawing(Feature feature, ImageEditProvider provider) async {
+    final result = await Navigator.push<Uint8List>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SimpleMaskDrawingScreen(
+          originalImage: widget.originalImage,
+          operation: feature.operation,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      // Set processed image in provider
+      provider.setProcessedImage(result);
+    }
+  }
+
+  Future<void> _uploadMaskFile(Feature feature, ImageEditProvider provider) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      
+      if (pickedFile != null) {
+        final maskFile = File(pickedFile.path);
+        
+        // Validate mask file
+        if (!maskFile.path.toLowerCase().endsWith('.png')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vui lòng chọn file PNG cho mask'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        // Process with mask file
+        await provider.processImage(
+          feature.operation,
+          maskFile: maskFile,
+          mode: 'fast',
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi tải mask: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildPageIndicator() {
