@@ -99,6 +99,17 @@ class _GenerationScreenState extends State<GenerationScreen> {
       ),
       operation: 'productPhotography',
     ),
+    Feature(
+      title: 'Tạo video từ ảnh',
+      description: 'Biến ảnh thành video sống động',
+      icon: Icons.videocam,
+      gradient: LinearGradient(
+        colors: [Color(0xFFff9a56), Color(0xFFff6b95)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      operation: 'imageToVideo',
+    ),
   ];
 
   @override

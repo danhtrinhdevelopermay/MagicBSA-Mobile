@@ -39,11 +39,36 @@ The mobile application is developed using Flutter 3.22.0 and Dart, employing the
 
 ### Flutter Mobile Application
 - **Clipdrop API**: Integrated for all AI image processing functionalities.
+- **Segmind API**: New integration for AI image-to-video generation using Kling AI model.
 - **Firebase**: For OneSignal push notification integration.
 - **OneSignal**: Push notification service.
 - **audioplayers**: For background music and sound effects.
 - **image_picker, image**: For image file operations.
-- **dio, http**: For HTTP requests to Clipdrop API.
+- **dio, http**: For HTTP requests to Clipdrop and Segmind APIs.
 - **path_provider, share_plus**: For local storage and sharing.
 - **permission_handler**: For Android permissions.
 - **curved_navigation_bar**: For advanced bottom navigation UI.
+- **video_player**: For video playback of generated content.
+
+## Recent Changes (August 1, 2025)
+
+✓ **NEW FEATURE: AI IMAGE-TO-VIDEO GENERATION** - Tích hợp Segmind API để tạo video từ ảnh:
+  - Added SegmindApiService with Kling AI image-to-video integration
+  - Created ImageToVideoWidget với comprehensive UI controls
+  - Added VideoPlayerWidget với real video playback functionality  
+  - Integrated với generation screen as 9th feature card
+  - Support Pro/Standard modes, 5s/10s duration, configurable CFG scale
+  - Full video controls: play/pause, save to gallery, share functionality
+  - Progress tracking during video generation process
+  - Error handling với meaningful Vietnamese error messages
+  - Navigation logic updated to route imageToVideo operation correctly
+
+✓ **SIMPLIFIED GENERATION SCREEN UI** - Đơn giản hóa giao diện trang chọn tính năng và khắc phục video không phát:
+  - Removed complex video preload system causing loading issues và build complications
+  - Redesigned generation_screen.dart với simple icon-based cards thay vì video demos
+  - Kept all 9 features với gradient backgrounds và clear descriptions
+  - Improved performance by removing video_player dependencies from main screen
+  - Clean card layout: icon section (flex 3) + content section (flex 2) với white background
+  - Simplified navigation directly to ImageUploadWidget với preSelectedFeature
+  - Reduced memory usage và startup time by eliminating video preloading
+  - Maintained full functionality while fixing video playback issues

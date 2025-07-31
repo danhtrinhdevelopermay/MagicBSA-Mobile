@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../providers/image_provider.dart';
 import '../screens/editor_screen.dart';
 import 'text_to_image_widget.dart';
+import 'image_to_video_widget.dart';
 
 class ImageUploadWidget extends StatefulWidget {
   final String? preSelectedFeature;
@@ -24,7 +25,29 @@ class _ImageUploadWidgetState extends State<ImageUploadWidget> {
   @override
   void initState() {
     super.initState();
-    // Set up callback for when image is picked
+    // Handle special cases first
+    final selectedFeature = widget.preSelectedFeature ?? widget.selectedOperation;
+    
+    // Check for special features that don't need image upload widget
+    if (selectedFeature == 'textToImage') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => TextToImageWidget()),
+        );
+      });
+      return;
+    }
+    
+    if (selectedFeature == 'imageToVideo') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => ImageToVideoWidget()),
+        );
+      });
+      return;
+    }
+    
+    // Set up callback for when image is picked (for other features)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<ImageEditProvider>(context, listen: false);
       provider.setOnImagePickedCallback((file) {
@@ -33,7 +56,7 @@ class _ImageUploadWidgetState extends State<ImageUploadWidget> {
             MaterialPageRoute(
               builder: (context) => EditorScreen(
                 originalImage: file,
-                preSelectedFeature: widget.preSelectedFeature ?? widget.selectedOperation,
+                preSelectedFeature: selectedFeature,
               ),
             ),
           );
