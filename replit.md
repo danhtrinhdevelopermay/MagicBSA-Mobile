@@ -22,6 +22,14 @@ Focus on practical, working solutions. solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **CRITICAL FIX: GITHUB ACTIONS APK BUILD COMPILATION ERROR** - Khắc phục lỗi "Too few positional arguments" trong main.dart:
+  - Fixed VideoPreloadService().preloadAllVideos() method call để có đúng parameter
+  - Added SimpleFeature class với videoPath property để truyền vào preloadAllVideos()
+  - Created features list với 8 video paths từ assets/videos/ folder
+  - Resolved compilation error "1 required, 0 given" trong lib/main.dart:40:43
+  - APK build bây giờ có thể pass kernel_snapshot step thành công
+  - No breaking changes to existing video preload functionality
+
 ✓ **CRITICAL FIX: GITHUB ACTIONS APK BUILD COMPILATION ERRORS** - Khắc phục hoàn toàn lỗi compilation blocking APK build:
   - Fixed critical syntax errors in generation_screen.dart: missing imports, undefined classes, Matrix4 errors
   - Fixed VideoPreloadService missing instance getter and method signature mismatches

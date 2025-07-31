@@ -36,8 +36,20 @@ void main() async {
 // ✅ BACKGROUND SERVICE INITIALIZATION: No blocking main thread
 void _initializeServicesInBackground() async {
   try {
+    // Create features list for video preloading
+    final features = [
+      SimpleFeature(videoPath: 'assets/videos/remove-backgroud_1753972662268.mp4'),
+      SimpleFeature(videoPath: 'assets/videos/expand-image_1753972662375.mp4'),
+      SimpleFeature(videoPath: 'assets/videos/Upscaling_1753972662419.mp4'),
+      SimpleFeature(videoPath: 'assets/videos/cleanup_1753972662443.mp4'),
+      SimpleFeature(videoPath: 'assets/videos/remove-text-demo_1753972669081.mp4'),
+      SimpleFeature(videoPath: 'assets/videos/reimagine_1753972669187.mp4'),
+      SimpleFeature(videoPath: 'assets/videos/text-to-image_1753972669268.mp4'),
+      SimpleFeature(videoPath: 'assets/videos/anh-san-pham_1753972669244.mp4'),
+    ];
+    
     // Initialize video service first (highest priority for UX)
-    VideoPreloadService().preloadAllVideos().then((_) {
+    VideoPreloadService().preloadAllVideos(features).then((_) {
       print('✅ Video preload service ready');
     }).catchError((e) {
       print('❌ Video preload failed: $e');
@@ -68,6 +80,13 @@ void _initializeServicesInBackground() async {
   } catch (e) {
     print('Background service initialization error: $e');
   }
+}
+
+// Simple feature class for video preloading
+class SimpleFeature {
+  final String videoPath;
+  
+  SimpleFeature({required this.videoPath});
 }
 
 class AIImageEditorApp extends StatelessWidget {
