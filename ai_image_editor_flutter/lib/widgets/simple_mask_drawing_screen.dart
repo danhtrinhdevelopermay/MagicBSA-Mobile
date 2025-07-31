@@ -31,6 +31,8 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen>
   // ✅ CRITICAL FIX: Store display dimensions for accurate coordinate mapping
   double _displayWidth = 0;
   double _displayHeight = 0;
+  double _displayOffsetX = 0;
+  double _displayOffsetY = 0;
   
   // ✅ GRADIENT ANIMATION: For dynamic mask color during processing
   late AnimationController _gradientController;
@@ -151,15 +153,22 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen>
                         // ✅ DRAWING MODE: Normal drawing or processing with animated mask
                         return GestureDetector(
                           onPanStart: _isProcessing ? null : (details) {
+                            // ✅ CRITICAL FIX: Adjust position relative to image display area
                             final adjustedPosition = Offset(
                               details.localPosition.dx - offsetX,
                               details.localPosition.dy - offsetY,
                             );
+                            
+                            // Store display offsets for accurate mask creation
+                            _displayOffsetX = offsetX;
+                            _displayOffsetY = offsetY;
+                            
                             if (_isWithinImageBounds(adjustedPosition, displayWidth, displayHeight)) {
                               _addStroke(adjustedPosition);
                             }
                           },
                           onPanUpdate: _isProcessing ? null : (details) {
+                            // ✅ CRITICAL FIX: Consistent position adjustment
                             final adjustedPosition = Offset(
                               details.localPosition.dx - offsetX,
                               details.localPosition.dy - offsetY,
@@ -545,44 +554,66 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen>
     if (_displayWidth > 0 && _displayHeight > 0) {
       print('Using stored display dimensions: ${_displayWidth}x${_displayHeight}');
       
-      // Calculate scale factors using actual display dimensions
+      // ✅ CORRECTED SCALING: Direct mapping from display coordinates to original image coordinates
+      // The stored strokes are in display space relative to the fitted image display area
       final scaleX = width.toDouble() / _displayWidth;
       final scaleY = height.toDouble() / _displayHeight;
       
-      print('Scale factors: scaleX=$scaleX, scaleY=$scaleY');
-      print('Mapping from display space (${_displayWidth}x${_displayHeight}) to image space (${width}x${height})');
+      print('Scale factors: scaleX=${scaleX.toStringAsFixed(3)}, scaleY=${scaleY.toStringAsFixed(3)}');
+      print('Mapping from display space (${_displayWidth.toStringAsFixed(1)}x${_displayHeight.toStringAsFixed(1)}) to image space (${width}x${height})');
+      
+      // ✅ VALIDATION: Check if strokes are within expected display bounds
+      var strokesOutOfBounds = 0;
+      for (final stroke in _maskStrokes) {
+        if (stroke.dx < 0 || stroke.dx > _displayWidth || stroke.dy < 0 || stroke.dy > _displayHeight) {
+          strokesOutOfBounds++;
+        }
+      }
+      if (strokesOutOfBounds > 0) {
+        print('WARNING: $strokesOutOfBounds strokes are outside display bounds!');
+      }
       
       // Draw white strokes on mask (remove areas)
       for (int strokeIndex = 0; strokeIndex < _maskStrokes.length; strokeIndex++) {
-      final stroke = _maskStrokes[strokeIndex];
-      
-      // ✅ CORRECTED: Stroke coordinates are already in display space relative to UI image
-      // Map from UI image coordinates to actual image coordinates  
-      final x = (stroke.dx * scaleX).round();
-      final y = (stroke.dy * scaleY).round();
-      
-      print('Stroke $strokeIndex: UI(${stroke.dx.toInt()}, ${stroke.dy.toInt()}) -> Image($x, $y)');
-      
-      // Draw brush circle - scale brush size properly and add expansion (15% recommended by Clipdrop)
-      final baseBrushRadius = max(5, (_brushSize * min(scaleX, scaleY)).round());
-      final expandedBrushRadius = (baseBrushRadius * 1.15).round(); // 15% expansion for better results
-      
-      for (int dx = -expandedBrushRadius; dx <= expandedBrushRadius; dx++) {
-        for (int dy = -expandedBrushRadius; dy <= expandedBrushRadius; dy++) {
-          final px = x + dx;
-          final py = y + dy;
-          
-          if (px >= 0 && px < width && py >= 0 && py < height) {
-            final distance = (dx * dx + dy * dy);
-            if (distance <= expandedBrushRadius * expandedBrushRadius) {
-              // ✅ CONFIRMED: White pixel = remove area (255) per Clipdrop API spec
-              maskImage.setPixelRgb(px, py, 255, 255, 255);
-              totalPixelsDrawn++;
+        final stroke = _maskStrokes[strokeIndex];
+        
+        // ✅ CRITICAL FIX: Direct coordinate mapping from display to image space
+        // stroke.dx and stroke.dy are already in display coordinates (0 to _displayWidth/Height)
+        final imageX = (stroke.dx * scaleX).round();
+        final imageY = (stroke.dy * scaleY).round();
+        
+        // ✅ SAFETY: Ensure coordinates are within image bounds
+        if (imageX < 0 || imageX >= width || imageY < 0 || imageY >= height) {
+          print('WARNING: Stroke $strokeIndex maps outside image bounds: ($imageX, $imageY)');
+          continue;
+        }
+        
+        // ✅ DEBUG: Log first and last few strokes for verification
+        if (strokeIndex < 3 || strokeIndex >= _maskStrokes.length - 3) {
+          print('Stroke $strokeIndex: Display(${stroke.dx.toStringAsFixed(1)}, ${stroke.dy.toStringAsFixed(1)}) -> Image($imageX, $imageY)');
+        }
+        
+        // ✅ IMPROVED BRUSH: Scale brush size proportionally and add safety margin
+        final avgScale = (scaleX + scaleY) / 2;
+        final baseBrushRadius = max(3, (_brushSize * avgScale * 0.8).round()); // Slightly smaller for precision
+        
+        // Draw circular brush stroke
+        for (int dx = -baseBrushRadius; dx <= baseBrushRadius; dx++) {
+          for (int dy = -baseBrushRadius; dy <= baseBrushRadius; dy++) {
+            final px = imageX + dx;
+            final py = imageY + dy;
+            
+            if (px >= 0 && px < width && py >= 0 && py < height) {
+              final distance = (dx * dx + dy * dy);
+              if (distance <= baseBrushRadius * baseBrushRadius) {
+                // ✅ CONFIRMED: White pixel = remove area (255) per Clipdrop API spec
+                maskImage.setPixelRgb(px, py, 255, 255, 255);
+                totalPixelsDrawn++;
+              }
             }
           }
         }
       }
-    }
     } else {
       // Fallback if display dimensions not available
       print('WARNING: Display dimensions not available, using fallback');
