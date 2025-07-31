@@ -72,17 +72,61 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
                       border: Border.all(color: Colors.white, width: 2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: GestureDetector(
-                      onPanStart: (details) => _addStroke(details.localPosition),
-                      onPanUpdate: (details) => _addStroke(details.localPosition),
-                      child: CustomPaint(
-                        painter: MaskPainter(
-                          originalImage: _originalImageUI,
-                          strokes: _maskStrokes,
-                          brushSize: _brushSize,
-                        ),
-                        size: Size.infinite,
-                      ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Calculate proper image display size with aspect ratio
+                        final imageAspectRatio = _originalImageUI.width / _originalImageUI.height;
+                        final containerAspectRatio = constraints.maxWidth / constraints.maxHeight;
+                        
+                        late double displayWidth, displayHeight, offsetX, offsetY;
+                        
+                        if (imageAspectRatio > containerAspectRatio) {
+                          // Image is wider - fit to width
+                          displayWidth = constraints.maxWidth;
+                          displayHeight = displayWidth / imageAspectRatio;
+                          offsetX = 0;
+                          offsetY = (constraints.maxHeight - displayHeight) / 2;
+                        } else {
+                          // Image is taller - fit to height
+                          displayHeight = constraints.maxHeight;
+                          displayWidth = displayHeight * imageAspectRatio;
+                          offsetY = 0;
+                          offsetX = (constraints.maxWidth - displayWidth) / 2;
+                        }
+                        
+                        return GestureDetector(
+                          onPanStart: (details) {
+                            final adjustedPosition = Offset(
+                              details.localPosition.dx - offsetX,
+                              details.localPosition.dy - offsetY,
+                            );
+                            if (_isWithinImageBounds(adjustedPosition, displayWidth, displayHeight)) {
+                              _addStroke(adjustedPosition);
+                            }
+                          },
+                          onPanUpdate: (details) {
+                            final adjustedPosition = Offset(
+                              details.localPosition.dx - offsetX,
+                              details.localPosition.dy - offsetY,
+                            );
+                            if (_isWithinImageBounds(adjustedPosition, displayWidth, displayHeight)) {
+                              _addStroke(adjustedPosition);
+                            }
+                          },
+                          child: CustomPaint(
+                            painter: MaskPainter(
+                              originalImage: _originalImageUI,
+                              strokes: _maskStrokes,
+                              brushSize: _brushSize,
+                              displayWidth: displayWidth,
+                              displayHeight: displayHeight,
+                              offsetX: offsetX,
+                              offsetY: offsetY,
+                            ),
+                            size: Size(constraints.maxWidth, constraints.maxHeight),
+                          ),
+                        );
+                      },
                     ),
                   )
                 : const Center(
@@ -182,6 +226,13 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
     );
   }
 
+  bool _isWithinImageBounds(Offset position, double displayWidth, double displayHeight) {
+    return position.dx >= 0 && 
+           position.dx <= displayWidth && 
+           position.dy >= 0 && 
+           position.dy <= displayHeight;
+  }
+
   void _addStroke(Offset position) {
     setState(() {
       _maskStrokes.add(position);
@@ -198,20 +249,29 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
   void _createTestMask() {
     setState(() {
       _maskStrokes.clear();
-      // Add a few test strokes in center area
+      // Add test strokes in UI coordinate space (will be properly mapped to image coordinates)
+      // These are relative to the display image size, not the original image
       final centerX = _originalImageUI.width / 2;
       final centerY = _originalImageUI.height / 2;
       
-      // Create a small circle of strokes
+      // Create a small circle of strokes in the center
       for (int i = 0; i < 20; i++) {
         final angle = (i / 20) * 2 * 3.14159;
-        final radius = 30.0;
+        final radius = 50.0; // Larger radius for visibility
         final x = centerX + radius * cos(angle);
         final y = centerY + radius * sin(angle);
         _maskStrokes.add(Offset(x, y));
       }
       
+      // Add a few strokes on the right side to test coordinate mapping
+      for (int i = 0; i < 10; i++) {
+        final x = _originalImageUI.width * 0.8; // Right side of image
+        final y = _originalImageUI.height * 0.3 + (i * 10); // Vertical line
+        _maskStrokes.add(Offset(x, y));
+      }
+      
       print('Created test mask with ${_maskStrokes.length} strokes');
+      print('Test strokes at: center(${centerX.toInt()}, ${centerY.toInt()}) and right side');
     });
   }
 
@@ -317,17 +377,24 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
 
     int totalPixelsDrawn = 0;
     
+    // Calculate scale factors for proper coordinate mapping
+    final scaleX = width / _originalImageUI.width;
+    final scaleY = height / _originalImageUI.height;
+    
+    print('Scale factors: scaleX=$scaleX, scaleY=$scaleY');
+    
     // Draw white strokes on mask (remove areas)
     for (int strokeIndex = 0; strokeIndex < _maskStrokes.length; strokeIndex++) {
       final stroke = _maskStrokes[strokeIndex];
-      // Convert screen coordinates to image coordinates
-      final x = (stroke.dx * width / _originalImageUI.width).round();
-      final y = (stroke.dy * height / _originalImageUI.height).round();
+      
+      // CRITICAL FIX: Use proper coordinate mapping with actual display scaling
+      final x = (stroke.dx * scaleX).round();
+      final y = (stroke.dy * scaleY).round();
       
       print('Stroke $strokeIndex: UI(${stroke.dx.toInt()}, ${stroke.dy.toInt()}) -> Image($x, $y)');
       
-      // Draw brush circle - make it larger for better visibility
-      final brushRadius = max(3, (_brushSize * width / _originalImageUI.width * 1.5).round());
+      // Draw brush circle - scale brush size properly
+      final brushRadius = max(5, (_brushSize * min(scaleX, scaleY)).round());
       
       for (int dx = -brushRadius; dx <= brushRadius; dx++) {
         for (int dy = -brushRadius; dy <= brushRadius; dy++) {
@@ -391,31 +458,48 @@ class MaskPainter extends CustomPainter {
   final ui.Image originalImage;
   final List<Offset> strokes;
   final double brushSize;
+  final double displayWidth;
+  final double displayHeight;
+  final double offsetX;
+  final double offsetY;
 
   MaskPainter({
     required this.originalImage,
     required this.strokes,
     required this.brushSize,
+    required this.displayWidth,
+    required this.displayHeight, 
+    required this.offsetX,
+    required this.offsetY,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw original image
+    // Draw original image with proper positioning and scaling
     final paint = Paint();
     canvas.drawImageRect(
       originalImage,
       Rect.fromLTWH(0, 0, originalImage.width.toDouble(), originalImage.height.toDouble()),
-      Rect.fromLTWH(0, 0, size.width, size.height),
+      Rect.fromLTWH(offsetX, offsetY, displayWidth, displayHeight),
       paint,
     );
 
-    // Draw mask strokes
+    // Draw mask strokes only within image bounds
     final maskPaint = Paint()
-      ..color = Colors.red.withOpacity(0.6)
+      ..color = Colors.red.withOpacity(0.7)
       ..style = PaintingStyle.fill;
 
+    final strokePaint = Paint()
+      ..color = Colors.white.withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
     for (final stroke in strokes) {
-      canvas.drawCircle(stroke, brushSize / 2, maskPaint);
+      final adjustedStroke = Offset(stroke.dx + offsetX, stroke.dy + offsetY);
+      // Draw red fill for removal area
+      canvas.drawCircle(adjustedStroke, brushSize / 2, maskPaint);
+      // Draw white border for visibility
+      canvas.drawCircle(adjustedStroke, brushSize / 2, strokePaint);
     }
   }
 

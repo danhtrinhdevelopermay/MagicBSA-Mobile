@@ -16,6 +16,17 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **CRITICAL FIX: COORDINATE MAPPING BUG** - Khắc phục lỗi nghiêm trọng coordinate mapping trong tính năng xóa vật thể:
+  - FIXED coordinate mapping issue: user vẽ bên phải nhưng AI xóa bên trái
+  - Implemented proper aspect ratio-aware display với LayoutBuilder và offsetX/offsetY calculations
+  - Fixed UI coordinate to image coordinate conversion với proper scaleX/scaleY factors
+  - Enhanced gesture detection với boundary checking để chỉ nhận strokes trong image bounds
+  - Updated MaskPainter với proper display positioning và visual feedback improvements
+  - Added comprehensive coordinate mapping debug logging và validation
+  - Improved brush size scaling để consistent across different image resolutions
+  - Fixed mask creation để accurately map UI strokes to exact image pixel positions
+  - Lỗi nghiêm trọng đã được khắc phục: mask giờ được tạo đúng vị trí user vẽ
+
 ✓ **COMPREHENSIVE OBJECT REMOVAL DEBUGGING** - Thêm debug logging chi tiết và test tools cho tính năng xóa vật thể:
   - Added comprehensive debug logging trong SimpleMaskDrawingScreen: mask creation, coordinate mapping, pixel counting
   - Enhanced ClipDropService với detailed API call logging, response analysis, và credit tracking
