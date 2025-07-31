@@ -16,6 +16,13 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **UPDATED APP LOGO** - Thay đổi logo Android app thành gradient star design mới:
+  - Replaced app logo với new 1024x1024 gradient star logo (blue to purple)
+  - Generated all Android launcher icon densities (48px to 192px) preserving quality
+  - Created adaptive icon foreground versions (108px to 432px) cho modern Android
+  - Updated assets/images/app_icon.png với logo mới
+  - Logo hiển thị trên màn hình chính giữ nguyên kích thước 1024x1024 không thu phóng
+
 ✓ **UPDATED PACKAGE NAME** - Thay đổi package name từ com.example.ai_image_editor_flutter thành com.brightstartsacademy.ai.twink:
   - Updated android/app/build.gradle với namespace và applicationId mới
   - Created new MainActivity.kt trong correct package structure
