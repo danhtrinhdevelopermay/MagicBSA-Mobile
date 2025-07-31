@@ -5,7 +5,7 @@ import MaskDrawing from "./mask-drawing";
 
 interface ImageEditorProps {
   file: File;
-  onProcessImage: (operation: 'remove_background' | 'remove_text' | 'cleanup' | 'remove_logo', maskBlob?: Blob) => void;
+  onProcessImage: (operation: string, maskBlob?: Blob) => void;
   isProcessing: boolean;
 }
 

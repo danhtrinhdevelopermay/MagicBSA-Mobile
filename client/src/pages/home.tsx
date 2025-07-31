@@ -1,28 +1,13 @@
 import { useLocation } from "wouter";
-import UploadArea from "@/components/ui/upload-area";
 import BottomNavigation from "@/components/ui/bottom-navigation";
-import { WandSparkles, Menu } from "lucide-react";
+import { WandSparkles, Menu, ArrowRight, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [, setLocation] = useLocation();
 
-  const handleFileSelect = (file: File) => {
-    // Store file data in sessionStorage to pass to editor page
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const fileData = {
-        fileName: file.name,
-        fileType: file.type,
-        fileData: (e.target?.result as string).split(',')[1] // Remove data:image/jpeg;base64, prefix
-      };
-      sessionStorage.setItem('uploadedFile', JSON.stringify(fileData));
-      setLocation('/editor');
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const renderMainContent = () => {
-    return <UploadArea onFileSelect={handleFileSelect} />;
+  const handleExploreFeatures = () => {
+    setLocation('/generation');
   };
 
   return (
@@ -44,42 +29,91 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-md mx-auto px-4 pb-20">
-        {renderMainContent()}
+        {/* Hero Section */}
+        <section className="py-8 text-center">
+          <div className="mb-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-3xl mx-auto mb-4 flex items-center justify-center">
+              <Sparkles className="text-white" size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">AI Image Editor</h2>
+            <p className="text-slate-600">Transform your images with powerful AI tools</p>
+          </div>
+          
+          <Button
+            onClick={handleExploreFeatures}
+            className="w-full bg-gradient-to-r from-primary to-secondary text-white py-4 rounded-2xl font-semibold text-lg flex items-center justify-center space-x-2 hover:shadow-lg transition-all mb-6"
+          >
+            <span>Explore AI Features</span>
+            <ArrowRight size={20} />
+          </Button>
+        </section>
 
-        {/* Features Section */}
+        {/* Features Overview */}
         <section className="py-6">
-          <h3 className="font-semibold text-slate-800 mb-4">Features</h3>
+          <h3 className="font-semibold text-slate-800 mb-4">What You Can Do</h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3">
-                <i className="fas fa-cut text-primary"></i>
+              <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-blue-500 font-bold text-sm">BG</span>
               </div>
-              <h4 className="font-medium text-slate-800 mb-1">Auto Background</h4>
-              <p className="text-xs text-slate-600">Remove backgrounds instantly with AI</p>
+              <h4 className="font-medium text-slate-800 mb-1">Remove Background</h4>
+              <p className="text-xs text-slate-600">AI-powered background removal</p>
             </div>
             
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center mb-3">
-                <i className="fas fa-magic text-secondary"></i>
+              <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-purple-500 font-bold text-sm">✂️</span>
               </div>
-              <h4 className="font-medium text-slate-800 mb-1">AI Processing</h4>
-              <p className="text-xs text-slate-600">Fast and accurate AI processing</p>
-            </div>
-            
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-              <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center mb-3">
-                <i className="fas fa-lightning-bolt text-accent"></i>
-              </div>
-              <h4 className="font-medium text-slate-800 mb-1">Fast Processing</h4>
-              <p className="text-xs text-slate-600">Get results in seconds</p>
+              <h4 className="font-medium text-slate-800 mb-1">Object Removal</h4>
+              <p className="text-xs text-slate-600">Remove unwanted objects</p>
             </div>
             
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
               <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mb-3">
-                <i className="fas fa-shield-alt text-green-500"></i>
+                <span className="text-green-500 font-bold text-sm">T</span>
               </div>
-              <h4 className="font-medium text-slate-800 mb-1">High Quality</h4>
-              <p className="text-xs text-slate-600">Professional-grade results</p>
+              <h4 className="font-medium text-slate-800 mb-1">Text Removal</h4>
+              <p className="text-xs text-slate-600">Clean text from images</p>
+            </div>
+            
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+              <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-red-500 font-bold text-sm">↗️</span>
+              </div>
+              <h4 className="font-medium text-slate-800 mb-1">Upscaling</h4>
+              <p className="text-xs text-slate-600">Enhance image quality</p>
+            </div>
+
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+              <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-orange-500 font-bold text-sm">📐</span>
+              </div>
+              <h4 className="font-medium text-slate-800 mb-1">Expand Image</h4>
+              <p className="text-xs text-slate-600">Extend image boundaries</p>
+            </div>
+            
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+              <div className="w-10 h-10 bg-pink-500/10 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-pink-500 font-bold text-sm">🎨</span>
+              </div>
+              <h4 className="font-medium text-slate-800 mb-1">Reimagine</h4>
+              <p className="text-xs text-slate-600">AI creative variations</p>
+            </div>
+
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+              <div className="w-10 h-10 bg-indigo-500/10 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-indigo-500 font-bold text-sm">💭</span>
+              </div>
+              <h4 className="font-medium text-slate-800 mb-1">Text to Image</h4>
+              <p className="text-xs text-slate-600">Create from description</p>
+            </div>
+            
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+              <div className="w-10 h-10 bg-teal-500/10 rounded-lg flex items-center justify-center mb-3">
+                <span className="text-teal-500 font-bold text-sm">📦</span>
+              </div>
+              <h4 className="font-medium text-slate-800 mb-1">Product Photo</h4>
+              <p className="text-xs text-slate-600">Professional product shots</p>
             </div>
           </div>
         </section>

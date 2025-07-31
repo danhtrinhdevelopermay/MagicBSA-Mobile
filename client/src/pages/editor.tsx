@@ -15,6 +15,7 @@ export default function Editor() {
   const [, setLocation] = useLocation();
   const [currentJob, setCurrentJob] = useState<ImageJob | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedOperation, setSelectedOperation] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -22,7 +23,7 @@ export default function Editor() {
   useEffect(() => {
     const storedFileData = sessionStorage.getItem('uploadedFile');
     if (storedFileData) {
-      const { fileName, fileType, fileData } = JSON.parse(storedFileData);
+      const { fileName, fileType, fileData, operation } = JSON.parse(storedFileData);
       // Convert base64 back to File
       const byteCharacters = atob(fileData);
       const byteNumbers = new Array(byteCharacters.length);
@@ -32,6 +33,7 @@ export default function Editor() {
       const byteArray = new Uint8Array(byteNumbers);
       const file = new File([byteArray], fileName, { type: fileType });
       setSelectedFile(file);
+      setSelectedOperation(operation || "");
     } else {
       // If no file data, redirect back to home
       setLocation('/');
@@ -164,7 +166,19 @@ export default function Editor() {
     }
   }
 
-  const handleProcessImage = (operation: 'remove_background' | 'remove_text' | 'cleanup' | 'remove_logo', maskBlob?: Blob) => {
+  // Auto-start processing when file and operation are ready
+  useEffect(() => {
+    if (selectedFile && selectedOperation && selectedOperation !== 'cleanup') {
+      createJobMutation.mutate({ file: selectedFile, operation: selectedOperation }, {
+        onSuccess: (job) => {
+          // Automatically start processing
+          processJobMutation.mutate(job.id);
+        }
+      });
+    }
+  }, [selectedFile, selectedOperation, createJobMutation, processJobMutation]);
+
+  const handleProcessImage = (operation: string, maskBlob?: Blob) => {
     if (!selectedFile) return;
     
     // Handle cleanup with mask differently
@@ -186,12 +200,22 @@ export default function Editor() {
     setCurrentJob(null);
     setSelectedFile(null);
     sessionStorage.removeItem('uploadedFile');
-    setLocation('/');
+    if (selectedOperation) {
+      sessionStorage.setItem('selectedOperation', selectedOperation);
+      setLocation('/upload');
+    } else {
+      setLocation('/');
+    }
   };
 
   const handleGoBack = () => {
     sessionStorage.removeItem('uploadedFile');
-    setLocation('/');
+    if (selectedOperation) {
+      sessionStorage.setItem('selectedOperation', selectedOperation);
+      setLocation('/upload');
+    } else {
+      setLocation('/');
+    }
   };
 
   const renderMainContent = () => {
@@ -211,13 +235,19 @@ export default function Editor() {
     }
 
     if (selectedFile) {
-      return (
-        <ImageEditor
-          file={selectedFile}
-          onProcessImage={handleProcessImage}
-          isProcessing={createJobMutation.isPending || cleanupMutation.isPending}
-        />
-      );
+      // Only show ImageEditor for cleanup operation, others auto-process
+      if (selectedOperation === 'cleanup') {
+        return (
+          <ImageEditor
+            file={selectedFile}
+            onProcessImage={handleProcessImage}
+            isProcessing={createJobMutation.isPending || cleanupMutation.isPending}
+          />
+        );
+      } else {
+        // For other operations, show processing immediately
+        return <ProcessingOverlay operation={selectedOperation as any} />;
+      }
     }
 
     return null;
