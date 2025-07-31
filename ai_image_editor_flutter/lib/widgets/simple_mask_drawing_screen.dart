@@ -26,6 +26,10 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
   double _brushSize = 20.0;
   late ui.Image _originalImageUI;
   bool _imageLoaded = false;
+  
+  // ✅ CRITICAL FIX: Store display dimensions for accurate coordinate mapping
+  double _displayWidth = 0;
+  double _displayHeight = 0;
 
   @override
   void initState() {
@@ -93,6 +97,10 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
                           offsetY = 0;
                           offsetX = (constraints.maxWidth - displayWidth) / 2;
                         }
+                        
+                        // ✅ CRITICAL FIX: Store display dimensions for mask creation
+                        _displayWidth = displayWidth;
+                        _displayHeight = displayHeight;
                         
                         return GestureDetector(
                           onPanStart: (details) {
@@ -250,35 +258,48 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
     setState(() {
       _maskStrokes.clear();
       
-      // ✅ FIXED: Create test strokes in UI DISPLAY coordinate space, not image coordinates
-      // This simulates what user actually draws on screen
-      
-      // Get display area info (this will be calculated in LayoutBuilder)
-      // For now, create strokes that would be visible in the center area of the display
-      
-      // Center area (will be properly mapped to image coordinates later)
-      final displayCenterX = 200.0; // This is in display coordinates
-      final displayCenterY = 300.0; // This is in display coordinates
-      
-      // Create a cluster of strokes in center (simulates user drawing)
-      for (int i = 0; i < 20; i++) {
-        final angle = (i / 20) * 2 * 3.14159;
-        final radius = 30.0; // Smaller radius in display coordinates
-        final x = displayCenterX + radius * cos(angle);
-        final y = displayCenterY + radius * sin(angle);
-        _maskStrokes.add(Offset(x, y));
+      // ✅ CRITICAL FIX: Create test strokes using actual display dimensions
+      if (_displayWidth > 0 && _displayHeight > 0) {
+        // Create strokes at the BOTTOM of image (where user wanted to remove meat)
+        final centerX = _displayWidth / 2;
+        final bottomY = _displayHeight * 0.8; // 80% down from top = bottom area
+        
+        print('Creating test mask at bottom area');
+        print('Display dimensions: ${_displayWidth}x${_displayHeight}');
+        print('Target area: center=$centerX, bottom=$bottomY');
+        
+        // Create cluster in bottom area (simulating user drawing on meat)
+        for (int i = 0; i < 25; i++) {
+          final angle = (i / 25) * 2 * 3.14159;
+          final radius = 40.0;
+          final x = centerX + radius * cos(angle);
+          final y = bottomY + radius * sin(angle);
+          _maskStrokes.add(Offset(x, y));
+        }
+        
+        // Add horizontal line across bottom
+        for (int i = 0; i < 15; i++) {
+          final x = centerX - 75 + (i * 10);
+          final y = bottomY;
+          _maskStrokes.add(Offset(x, y));
+        }
+        
+        print('Created test mask with ${_maskStrokes.length} strokes in BOTTOM area');
+      } else {
+        // Fallback for when display dimensions not available
+        final centerX = 200.0;
+        final bottomY = 400.0; // Assume bottom area
+        
+        for (int i = 0; i < 20; i++) {
+          final angle = (i / 20) * 2 * 3.14159;
+          final radius = 30.0;
+          final x = centerX + radius * cos(angle);
+          final y = bottomY + radius * sin(angle);
+          _maskStrokes.add(Offset(x, y));
+        }
+        
+        print('Created fallback test mask with ${_maskStrokes.length} strokes');
       }
-      
-      // Add some strokes on the side for visibility test
-      for (int i = 0; i < 10; i++) {
-        final x = displayCenterX + 100; // Right of center
-        final y = displayCenterY - 50 + (i * 10); // Vertical line
-        _maskStrokes.add(Offset(x, y));
-      }
-      
-      print('Created test mask with ${_maskStrokes.length} strokes');
-      print('Test strokes at display coordinates: center($displayCenterX, $displayCenterY)');
-      print('These will be mapped to image coordinates during mask creation');
     });
   }
 
@@ -372,9 +393,20 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
     final width = originalImage.width;
     final height = originalImage.height;
     
+    // ✅ CRITICAL FIX: We need to get the ACTUAL display dimensions, not UI image dimensions
+    // The strokes are saved relative to the display area size, not the original UI image size
+    
+    // Calculate display dimensions using the same logic as LayoutBuilder
+    final imageAspectRatio = _originalImageUI.width / _originalImageUI.height;
+    
+    // For mask creation, we need to reverse-engineer the display size
+    // Since we don't have access to constraints here, we'll use a different approach:
+    // The strokes are stored in display coordinates relative to the fitted image display area
+    
     print('=== MASK CREATION DEBUG ===');
     print('Original image dimensions: ${width}x${height}');
     print('UI image dimensions: ${_originalImageUI.width}x${_originalImageUI.height}');
+    print('Image aspect ratio: $imageAspectRatio');
     print('Total strokes to process: ${_maskStrokes.length}');
     print('Brush size: $_brushSize');
 
@@ -384,20 +416,26 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
 
     int totalPixelsDrawn = 0;
     
-    // ✅ CRITICAL FIX: Proper coordinate mapping from display space to image space
-    // The strokes are stored in display coordinates (relative to the visible image on screen)
-    // We need to map them to the actual image coordinate space
+    // ✅ CRITICAL FIX: Use direct mapping from display coordinates to image coordinates
+    // Since strokes are saved in display space (after offset adjustment), 
+    // we need to map them directly to image space
     
-    // IMPORTANT: Strokes are in display coordinate space (0,0 to displayWidth,displayHeight)
-    // Need to map to image space (0,0 to width,height)
-    final scaleX = width.toDouble() / _originalImageUI.width;
-    final scaleY = height.toDouble() / _originalImageUI.height;
+    // The strokes are stored in display coordinate space - need to find the actual display size
+    // For now, use a simple approach: strokes relative to their bounds
     
-    print('Scale factors: scaleX=$scaleX, scaleY=$scaleY');
-    print('Mapping from display space (${_originalImageUI.width}x${_originalImageUI.height}) to image space (${width}x${height})');
-    
-    // Draw white strokes on mask (remove areas)
-    for (int strokeIndex = 0; strokeIndex < _maskStrokes.length; strokeIndex++) {
+    // ✅ CRITICAL FIX: Use the actual stored display dimensions
+    if (_displayWidth > 0 && _displayHeight > 0) {
+      print('Using stored display dimensions: ${_displayWidth}x${_displayHeight}');
+      
+      // Calculate scale factors using actual display dimensions
+      final scaleX = width.toDouble() / _displayWidth;
+      final scaleY = height.toDouble() / _displayHeight;
+      
+      print('Scale factors: scaleX=$scaleX, scaleY=$scaleY');
+      print('Mapping from display space (${_displayWidth}x${_displayHeight}) to image space (${width}x${height})');
+      
+      // Draw white strokes on mask (remove areas)
+      for (int strokeIndex = 0; strokeIndex < _maskStrokes.length; strokeIndex++) {
       final stroke = _maskStrokes[strokeIndex];
       
       // ✅ CORRECTED: Stroke coordinates are already in display space relative to UI image
@@ -424,6 +462,23 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
               totalPixelsDrawn++;
             }
           }
+        }
+      }
+    }
+    } else {
+      // Fallback if display dimensions not available
+      print('WARNING: Display dimensions not available, using fallback');
+      final scaleX = 1.0;
+      final scaleY = 1.0;
+      
+      for (int strokeIndex = 0; strokeIndex < _maskStrokes.length; strokeIndex++) {
+        final stroke = _maskStrokes[strokeIndex];
+        final x = stroke.dx.round();
+        final y = stroke.dy.round();
+        
+        if (x >= 0 && x < width && y >= 0 && y < height) {
+          maskImage.setPixelRgb(x, y, 255, 255, 255);
+          totalPixelsDrawn++;
         }
       }
     }
