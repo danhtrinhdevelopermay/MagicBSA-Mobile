@@ -24,6 +24,22 @@ const upload = multer({
   }
 });
 
+// Configure multer for cleanup with mask file
+const uploadCleanup = multer({
+  dest: 'uploads/',
+  limits: {
+    fileSize: 30 * 1024 * 1024, // 30MB limit as per Clipdrop API
+  },
+  fileFilter: (req: any, file: any, cb: any) => {
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPG, PNG, and WEBP are allowed.'));
+    }
+  }
+});
+
 async function processWithClipdrop(imageBuffer: Buffer, operation: string, maskBuffer?: Buffer): Promise<Buffer> {
   const CLIPDROP_API_KEY = process.env.CLIPDROP_API_KEY || process.env.VITE_CLIPDROP_API_KEY || "";
   
@@ -50,6 +66,8 @@ async function processWithClipdrop(imageBuffer: Buffer, operation: string, maskB
   // For cleanup operation, mask is required
   if (operation === "cleanup" && maskBuffer) {
     formData.append("mask_file", new Blob([maskBuffer]), "mask.png");
+    // Add quality mode for better cleanup results
+    formData.append("mode", "quality");
   }
 
   const response = await fetch(apiUrl, {
@@ -76,6 +94,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   } catch (error) {
     // Directory might already exist
   }
+
+  // Direct cleanup processing with mask
+  app.post("/api/cleanup", uploadCleanup.fields([{ name: 'image', maxCount: 1 }, { name: 'mask', maxCount: 1 }]), async (req: any, res) => {
+    try {
+      if (!req.files || !req.files['image'] || !req.files['mask']) {
+        return res.status(400).json({ message: "Both image and mask files are required for cleanup" });
+      }
+
+      const imageFile = req.files['image'][0];
+      const maskFile = req.files['mask'][0];
+
+      // Read both files
+      const imageBuffer = await fs.readFile(imageFile.path);
+      const maskBuffer = await fs.readFile(maskFile.path);
+
+      try {
+        // Process with Clipdrop API
+        const processedBuffer = await processWithClipdrop(imageBuffer, "cleanup", maskBuffer);
+
+        // Clean up uploaded files
+        await fs.unlink(imageFile.path).catch(() => {});
+        await fs.unlink(maskFile.path).catch(() => {});
+
+        // Return processed image directly
+        res.set({
+          'Content-Type': 'image/png',
+          'Content-Length': processedBuffer.length
+        });
+        res.send(processedBuffer);
+      } catch (processError) {
+        console.error("Cleanup processing error:", processError);
+        
+        // Clean up uploaded files
+        await fs.unlink(imageFile.path).catch(() => {});
+        await fs.unlink(maskFile.path).catch(() => {});
+        
+        res.status(500).json({ 
+          message: "Failed to process cleanup", 
+          error: processError instanceof Error ? processError.message : "Unknown error"
+        });
+      }
+    } catch (error) {
+      console.error("Cleanup upload error:", error);
+      res.status(500).json({ message: "Failed to upload files for cleanup" });
+    }
+  });
 
   // Upload image and create job
   app.post("/api/jobs", upload.single('image'), async (req: any, res) => {

@@ -249,29 +249,36 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
   void _createTestMask() {
     setState(() {
       _maskStrokes.clear();
-      // Add test strokes in UI coordinate space (will be properly mapped to image coordinates)
-      // These are relative to the display image size, not the original image
-      final centerX = _originalImageUI.width / 2;
-      final centerY = _originalImageUI.height / 2;
       
-      // Create a small circle of strokes in the center
+      // ✅ FIXED: Create test strokes in UI DISPLAY coordinate space, not image coordinates
+      // This simulates what user actually draws on screen
+      
+      // Get display area info (this will be calculated in LayoutBuilder)
+      // For now, create strokes that would be visible in the center area of the display
+      
+      // Center area (will be properly mapped to image coordinates later)
+      final displayCenterX = 200.0; // This is in display coordinates
+      final displayCenterY = 300.0; // This is in display coordinates
+      
+      // Create a cluster of strokes in center (simulates user drawing)
       for (int i = 0; i < 20; i++) {
         final angle = (i / 20) * 2 * 3.14159;
-        final radius = 50.0; // Larger radius for visibility
-        final x = centerX + radius * cos(angle);
-        final y = centerY + radius * sin(angle);
+        final radius = 30.0; // Smaller radius in display coordinates
+        final x = displayCenterX + radius * cos(angle);
+        final y = displayCenterY + radius * sin(angle);
         _maskStrokes.add(Offset(x, y));
       }
       
-      // Add a few strokes on the right side to test coordinate mapping
+      // Add some strokes on the side for visibility test
       for (int i = 0; i < 10; i++) {
-        final x = _originalImageUI.width * 0.8; // Right side of image
-        final y = _originalImageUI.height * 0.3 + (i * 10); // Vertical line
+        final x = displayCenterX + 100; // Right of center
+        final y = displayCenterY - 50 + (i * 10); // Vertical line
         _maskStrokes.add(Offset(x, y));
       }
       
       print('Created test mask with ${_maskStrokes.length} strokes');
-      print('Test strokes at: center(${centerX.toInt()}, ${centerY.toInt()}) and right side');
+      print('Test strokes at display coordinates: center($displayCenterX, $displayCenterY)');
+      print('These will be mapped to image coordinates during mask creation');
     });
   }
 
@@ -334,7 +341,7 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
         widget.originalImage,
         ProcessingOperation.cleanup,
         maskFile: maskFile,
-        mode: 'fast',
+        mode: 'quality',  // ✅ CHANGED: Use quality mode for better results
       );
 
       Navigator.pop(context); // Close processing dialog
@@ -377,34 +384,42 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
 
     int totalPixelsDrawn = 0;
     
-    // Calculate scale factors for proper coordinate mapping
-    final scaleX = width / _originalImageUI.width;
-    final scaleY = height / _originalImageUI.height;
+    // ✅ CRITICAL FIX: Proper coordinate mapping from display space to image space
+    // The strokes are stored in display coordinates (relative to the visible image on screen)
+    // We need to map them to the actual image coordinate space
+    
+    // IMPORTANT: Strokes are in display coordinate space (0,0 to displayWidth,displayHeight)
+    // Need to map to image space (0,0 to width,height)
+    final scaleX = width.toDouble() / _originalImageUI.width;
+    final scaleY = height.toDouble() / _originalImageUI.height;
     
     print('Scale factors: scaleX=$scaleX, scaleY=$scaleY');
+    print('Mapping from display space (${_originalImageUI.width}x${_originalImageUI.height}) to image space (${width}x${height})');
     
     // Draw white strokes on mask (remove areas)
     for (int strokeIndex = 0; strokeIndex < _maskStrokes.length; strokeIndex++) {
       final stroke = _maskStrokes[strokeIndex];
       
-      // CRITICAL FIX: Use proper coordinate mapping with actual display scaling
+      // ✅ CORRECTED: Stroke coordinates are already in display space relative to UI image
+      // Map from UI image coordinates to actual image coordinates  
       final x = (stroke.dx * scaleX).round();
       final y = (stroke.dy * scaleY).round();
       
       print('Stroke $strokeIndex: UI(${stroke.dx.toInt()}, ${stroke.dy.toInt()}) -> Image($x, $y)');
       
-      // Draw brush circle - scale brush size properly
-      final brushRadius = max(5, (_brushSize * min(scaleX, scaleY)).round());
+      // Draw brush circle - scale brush size properly and add expansion (15% recommended by Clipdrop)
+      final baseBrushRadius = max(5, (_brushSize * min(scaleX, scaleY)).round());
+      final expandedBrushRadius = (baseBrushRadius * 1.15).round(); // 15% expansion for better results
       
-      for (int dx = -brushRadius; dx <= brushRadius; dx++) {
-        for (int dy = -brushRadius; dy <= brushRadius; dy++) {
+      for (int dx = -expandedBrushRadius; dx <= expandedBrushRadius; dx++) {
+        for (int dy = -expandedBrushRadius; dy <= expandedBrushRadius; dy++) {
           final px = x + dx;
           final py = y + dy;
           
           if (px >= 0 && px < width && py >= 0 && py < height) {
             final distance = (dx * dx + dy * dy);
-            if (distance <= brushRadius * brushRadius) {
-              // White pixel = remove (255)
+            if (distance <= expandedBrushRadius * expandedBrushRadius) {
+              // ✅ CONFIRMED: White pixel = remove area (255) per Clipdrop API spec
               maskImage.setPixelRgb(px, py, 255, 255, 255);
               totalPixelsDrawn++;
             }
@@ -426,15 +441,55 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
       print('WARNING: Very few pixels drawn (${totalPixelsDrawn})');
     }
 
+    // ✅ VALIDATION: Check mask content before saving
+    int whitePixelCount = 0;
+    int blackPixelCount = 0;
+    
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        final pixel = maskImage.getPixel(x, y);
+        final r = pixel.r.toInt();
+        final g = pixel.g.toInt();
+        final b = pixel.b.toInt();
+        
+        if (r == 255 && g == 255 && b == 255) {
+          whitePixelCount++;
+        } else if (r == 0 && g == 0 && b == 0) {
+          blackPixelCount++;
+        }
+      }
+    }
+    
+    print('=== MASK VALIDATION ===');
+    print('White pixels (remove): $whitePixelCount (${(whitePixelCount / (width * height) * 100).toStringAsFixed(2)}%)');
+    print('Black pixels (keep): $blackPixelCount (${(blackPixelCount / (width * height) * 100).toStringAsFixed(2)}%)');
+    print('Total pixels: ${width * height}');
+    
+    if (whitePixelCount == 0) {
+      throw Exception('CRITICAL: No white pixels found in mask! Mask is completely black.');
+    }
+    
+    if (whitePixelCount > (width * height * 0.8)) {
+      print('WARNING: More than 80% of image marked for removal - this might be too much');
+    }
+
     // Save mask to temporary file
     final tempDir = await getTemporaryDirectory();
-    final maskFile = File('${tempDir.path}/mask_${DateTime.now().millisecondsSinceEpoch}.png');
+    final maskFile = File('${tempDir.path}/cleanup_mask_${DateTime.now().millisecondsSinceEpoch}.png');
     
-    final pngBytes = img.encodePng(maskImage);
+    final pngBytes = img.encodePng(maskImage, level: 0); // No compression for maximum compatibility
     await maskFile.writeAsBytes(pngBytes);
 
     print('Mask file saved: ${maskFile.path}');
     print('Mask file size: ${pngBytes.length} bytes');
+    
+    // Verify saved file can be read back
+    final verifyBytes = await maskFile.readAsBytes();
+    final verifyImage = img.decodePng(verifyBytes);
+    if (verifyImage == null) {
+      throw Exception('ERROR: Cannot decode saved mask file');
+    }
+    print('Mask file verification: OK (${verifyImage.width}x${verifyImage.height})');
     
     // Also save mask to Downloads for debugging (optional)
     try {

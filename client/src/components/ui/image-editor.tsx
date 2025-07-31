@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { Scissors, Type, Eraser, Shield } from "lucide-react";
 import { Button } from "./button";
+import MaskDrawing from "./mask-drawing";
 
 interface ImageEditorProps {
   file: File;
-  onProcessImage: (operation: 'remove_background' | 'remove_text' | 'cleanup' | 'remove_logo') => void;
+  onProcessImage: (operation: 'remove_background' | 'remove_text' | 'cleanup' | 'remove_logo', maskBlob?: Blob) => void;
   isProcessing: boolean;
 }
 
 export default function ImageEditor({ file, onProcessImage, isProcessing }: ImageEditorProps) {
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [showMaskDrawing, setShowMaskDrawing] = useState(false);
 
   useEffect(() => {
     const reader = new FileReader();
@@ -18,6 +20,29 @@ export default function ImageEditor({ file, onProcessImage, isProcessing }: Imag
     };
     reader.readAsDataURL(file);
   }, [file]);
+
+  const handleCleanupClick = () => {
+    setShowMaskDrawing(true);
+  };
+
+  const handleMaskComplete = (maskBlob: Blob) => {
+    onProcessImage('cleanup', maskBlob);
+    setShowMaskDrawing(false);
+  };
+
+  const handleMaskCancel = () => {
+    setShowMaskDrawing(false);
+  };
+
+  if (showMaskDrawing) {
+    return (
+      <MaskDrawing
+        imageFile={file}
+        onMaskComplete={handleMaskComplete}
+        onCancel={handleMaskCancel}
+      />
+    );
+  }
 
   return (
     <section className="py-6">
@@ -54,7 +79,7 @@ export default function ImageEditor({ file, onProcessImage, isProcessing }: Imag
           </Button>
           
           <Button
-            onClick={() => onProcessImage('cleanup')}
+            onClick={handleCleanupClick}
             disabled={isProcessing}
             className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 rounded-xl font-medium flex items-center justify-center space-x-2 hover:shadow-lg transition-all"
           >

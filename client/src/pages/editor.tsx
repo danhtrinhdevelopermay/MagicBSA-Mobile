@@ -61,6 +61,63 @@ export default function Editor() {
     },
   });
 
+  // Mutation for cleanup processing with mask
+  const cleanupMutation = useMutation({
+    mutationFn: async ({ imageFile, maskBlob }: { imageFile: File; maskBlob: Blob }) => {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      formData.append('mask', maskBlob, 'mask.png');
+      
+      const response = await fetch('/api/cleanup', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || 'Cleanup processing failed');
+      }
+      
+      return response.blob();
+    },
+    onSuccess: (processedBlob) => {
+      // Create a URL for the processed image
+      const processedUrl = URL.createObjectURL(processedBlob);
+      
+      // Create a fake job object for consistency with other operations
+      const now = new Date();
+      const fakeJob: ImageJob = {
+        id: 'cleanup-' + Date.now(),
+        originalImageUrl: URL.createObjectURL(selectedFile!),
+        processedImageUrl: processedUrl,
+        operation: 'cleanup',
+        status: 'completed',
+        errorMessage: null,
+        metadata: {
+          originalName: selectedFile!.name,
+          fileSize: selectedFile!.size,
+          mimeType: selectedFile!.type
+        },
+        createdAt: now,
+        updatedAt: now
+      };
+      
+      setCurrentJob(fakeJob);
+      
+      toast({
+        title: "Cleanup Complete",
+        description: "Objects have been successfully removed from your image!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Cleanup Failed",
+        description: error instanceof Error ? error.message : "Failed to process cleanup",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Mutation for processing a job
   const processJobMutation = useMutation({
     mutationFn: async (jobId: string) => {
@@ -107,9 +164,16 @@ export default function Editor() {
     }
   }
 
-  const handleProcessImage = (operation: 'remove_background' | 'remove_text' | 'cleanup' | 'remove_logo') => {
+  const handleProcessImage = (operation: 'remove_background' | 'remove_text' | 'cleanup' | 'remove_logo', maskBlob?: Blob) => {
     if (!selectedFile) return;
     
+    // Handle cleanup with mask differently
+    if (operation === 'cleanup' && maskBlob) {
+      cleanupMutation.mutate({ imageFile: selectedFile, maskBlob });
+      return;
+    }
+    
+    // Handle other operations normally
     createJobMutation.mutate({ file: selectedFile, operation }, {
       onSuccess: (job) => {
         // Automatically start processing
@@ -142,8 +206,8 @@ export default function Editor() {
       );
     }
 
-    if (currentJob?.status === 'processing' || processJobMutation.isPending) {
-      return <ProcessingOverlay operation={currentJob?.operation || 'remove_background'} />;
+    if (currentJob?.status === 'processing' || processJobMutation.isPending || cleanupMutation.isPending) {
+      return <ProcessingOverlay operation={currentJob?.operation || 'cleanup'} />;
     }
 
     if (selectedFile) {
@@ -151,7 +215,7 @@ export default function Editor() {
         <ImageEditor
           file={selectedFile}
           onProcessImage={handleProcessImage}
-          isProcessing={createJobMutation.isPending}
+          isProcessing={createJobMutation.isPending || cleanupMutation.isPending}
         />
       );
     }
