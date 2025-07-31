@@ -3,6 +3,7 @@ import 'package:video_player/video_player.dart';
 class VideoPreloadService {
   static final VideoPreloadService _instance = VideoPreloadService._internal();
   factory VideoPreloadService() => _instance;
+  static VideoPreloadService get instance => _instance;
   VideoPreloadService._internal();
 
   final Map<String, VideoPlayerController> _controllers = {};
@@ -30,31 +31,38 @@ class VideoPreloadService {
 
   bool get isInitialized => _isInitialized;
 
-  VideoPlayerController? getController(String id) {
-    return _controllers[id];
+  VideoPlayerController? getController(String path) {
+    // Extract filename from path for controller lookup
+    final filename = path.split('/').last.split('.').first;
+    return _controllers[filename];
   }
 
-  Future<void> preloadAllVideos() async {
+  bool isVideoReady(String path) {
+    final filename = path.split('/').last.split('.').first;
+    return _controllers.containsKey(filename) && _controllers[filename]!.value.isInitialized;
+  }
+
+  Future<void> preloadAllVideos(List<dynamic> features) async {
     if (_isInitialized) return;
 
     try {
       print('🎬 Starting video preload...');
       
-      for (int i = 0; i < _videoPaths.length; i++) {
-        final path = _videoPaths[i];
-        final id = _videoIds[i];
+      for (final feature in features) {
+        final path = feature.videoPath;
+        final filename = path.split('/').last.split('.').first;
         
-        print('📹 Loading video: $id');
+        print('📹 Loading video: $filename');
         
         final controller = VideoPlayerController.asset(path);
-        _controllers[id] = controller;
+        _controllers[filename] = controller;
         
         await controller.initialize();
         controller.setLooping(true);
         controller.setVolume(0);
         controller.play();
         
-        print('✅ Video loaded: $id');
+        print('✅ Video loaded: $filename');
       }
       
       _isInitialized = true;

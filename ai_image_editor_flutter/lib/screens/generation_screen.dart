@@ -7,135 +7,165 @@ import '../services/video_preload_service.dart';
 import '../widgets/pattern_painter.dart';
 
 class GenerationScreen extends StatefulWidget {
-  const GenerationScreen({super.key});
+  const GenerationScreen({Key? key}) : super(key: key);
 
   @override
   State<GenerationScreen> createState() => _GenerationScreenState();
 }
 
-class _GenerationScreenState extends State<GenerationScreen> {
-  final VideoPreloadService _videoService = VideoPreloadService();
-  bool _serviceReady = false;
-  final List<FeatureModel> features = [
-    FeatureModel(
-      id: 'remove_background',
+class _GenerationScreenState extends State<GenerationScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _loadingController;
+  late Animation<double> _loadingAnimation;
+  bool _isLoading = true;
+
+  
+  final List<Feature> features = [
+    Feature(
       title: 'Xóa nền ảnh',
-      description: 'Tự động loại bỏ nền ảnh với độ chính xác cao, giữ nguyên đối tượng chính. Hỗ trợ đa dạng loại ảnh từ chân dung, sản phẩm đến động vật.',
-      videoPath: 'assets/videos/remove_background.mp4',
-      icon: Icons.layers_clear_rounded,
-      gradient: const LinearGradient(
-        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+      description: 'Loại bỏ hoàn toàn nền ảnh chỉ trong vài giây với công nghệ AI tiên tiến. Phù hợp để tạo ảnh sản phẩm, ảnh chân dung chuyên nghiệp, hoặc ghép nền mới. Hỗ trợ đầy đủ các định dạng ảnh phổ biến và cho kết quả cực kỳ chính xác, giữ nguyên chất lượng đối tượng chính.',
+      videoPath: 'assets/videos/remove-backgroud_1753972662268.mp4',
+      icon: Icons.layers_clear_outlined,
+      gradient: LinearGradient(
+        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
+      operation: 'removeBackground',
     ),
-    FeatureModel(
-      id: 'expand_image',
+    Feature(
       title: 'Mở rộng ảnh',
-      description: 'Mở rộng khung hình thông minh, tự động tạo nội dung phù hợp xung quanh ảnh gốc. Lý tưởng cho việc thay đổi tỷ lệ và tạo không gian mới.',
-      videoPath: 'assets/videos/expand_image.mp4',
-      icon: Icons.crop_free_rounded,
-      gradient: const LinearGradient(
-        colors: [Color(0xFF10B981), Color(0xFF059669)],
+      description: 'Thêm không gian xung quanh ảnh một cách tự nhiên và thông minh. AI sẽ dự đoán và tạo thêm nội dung phù hợp với bối cảnh hiện tại của ảnh. Lý tưởng để chuyển đổi tỷ lệ khung hình, tạo wallpaper, hoặc mở rộng không gian trong ảnh phong cảnh, chân dung.',
+      videoPath: 'assets/videos/expand-image_1753972662375.mp4',
+      icon: Icons.open_in_full,
+      gradient: LinearGradient(
+        colors: [Color(0xFF11998e), Color(0xFF38ef7d)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
+      operation: 'uncrop',
     ),
-    FeatureModel(
-      id: 'upscaling',
+    Feature(
       title: 'Nâng cấp độ phân giải',
-      description: 'Tăng độ phân giải ảnh lên 2x, 4x với AI tiên tiến. Khôi phục chi tiết mất mát, làm sắc nét và cải thiện chất lượng ảnh cũ.',
-      videoPath: 'assets/videos/upscaling.mp4',
-      icon: Icons.high_quality_rounded,
-      gradient: const LinearGradient(
-        colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+      description: 'Tăng độ phân giải ảnh lên đến 4K mà không làm mất chất lượng. Công nghệ siêu phân giải AI tái tạo chi tiết sắc nét, khôi phục texture và làm mịn các đường nét. Hoàn hảo cho việc in ấn, thiết kế đồ họa chuyên nghiệp, hoặc phục hồi ảnh cũ có độ phân giải thấp.',
+      videoPath: 'assets/videos/Upscaling_1753972662419.mp4',
+      icon: Icons.high_quality,
+      gradient: LinearGradient(
+        colors: [Color(0xFFf093fb), Color(0xFFf5576c)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
+      operation: 'imageUpscaling',
     ),
-    FeatureModel(
-      id: 'cleanup',
-      title: 'Làm sạch ảnh',
-      description: 'Xóa bỏ đối tượng không mong muốn như người, vật thể, bóng râm. AI tự động lấp đầy vùng trống một cách tự nhiên và hài hòa.',
-      videoPath: 'assets/videos/cleanup.mp4',
-      icon: Icons.cleaning_services_rounded,
-      gradient: const LinearGradient(
-        colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+    Feature(
+      title: 'Xóa vật thể',
+      description: 'Loại bỏ bất kỳ vật thể nào không mong muốn khỏi ảnh một cách tự nhiên. Chỉ cần chạm và vẽ lên đối tượng cần xóa, AI sẽ tự động lấp đầy vùng đó bằng nội dung phù hợp. Tuyệt vời để dọn sạch ảnh du lịch, loại bỏ người qua đường, hoặc xóa các chi tiết làm mất thẩm mỹ.',
+      videoPath: 'assets/videos/cleanup_1753972662443.mp4',
+      icon: Icons.auto_fix_high,
+      gradient: LinearGradient(
+        colors: [Color(0xFFfc4a1a), Color(0xFFf7b733)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
+      operation: 'cleanup',
     ),
-    FeatureModel(
-      id: 'remove_text',
-      title: 'Xóa chữ và watermark',
-      description: 'Loại bỏ hoàn toàn văn bản, logo, watermark khỏi ảnh. Công nghệ AI phục hồi nền một cách tự nhiên, không để lại dấu vết.',
-      videoPath: 'assets/videos/remove_text.mp4',
-      icon: Icons.text_fields_rounded,
-      gradient: const LinearGradient(
-        colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+    Feature(
+      title: 'Xóa chữ khỏi ảnh',
+      description: 'Loại bỏ hoàn toàn text, watermark, logo, hay bất kỳ văn bản nào từ ảnh. AI thông minh nhận diện và xóa sạch các ký tự, đồng thời tự động khôi phục nền phía sau. Lý tưởng để làm sạch ảnh stock, xóa watermark không mong muốn, hoặc chuẩn bị ảnh cho thiết kế mới.',
+      videoPath: 'assets/videos/remove-text-demo_1753972669081.mp4',
+      icon: Icons.text_fields_outlined,
+      gradient: LinearGradient(
+        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
+      operation: 'removeText',
     ),
-    FeatureModel(
-      id: 'reimagine',
-      title: 'Tái tạo ảnh sáng tạo',
-      description: 'Tạo ra những phiên bản hoàn toàn mới của ảnh với phong cách nghệ thuật khác biệt. Biến ảnh thường thành tác phẩm nghệ thuật độc đáo.',
-      videoPath: 'assets/videos/reimagine.mp4',
-      icon: Icons.auto_fix_high_rounded,
-      gradient: const LinearGradient(
-        colors: [Color(0xFFEC4899), Color(0xFFDB2777)],
+    Feature(
+      title: 'Tái tạo ảnh AI',
+      description: 'Biến đổi hoàn toàn phong cách và diện mạo của ảnh với sức mạnh AI sáng tạo. Giữ nguyên bố cục và đối tượng chính nhưng thay đổi hoàn toàn màu sắc, texture, và phong cách nghệ thuật. Khám phá vô số khả năng sáng tạo từ hiện thực đến abstract, từ cổ điển đến hiện đại.',
+      videoPath: 'assets/videos/reimagine_1753972669187.mp4',
+      icon: Icons.auto_awesome,
+      gradient: LinearGradient(
+        colors: [Color(0xFF8360c3), Color(0xFF2ebf91)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
+      operation: 'reimagine',
     ),
-    FeatureModel(
-      id: 'text_to_image',
+    Feature(
       title: 'Tạo ảnh từ văn bản',
-      description: 'Biến ý tưởng thành hình ảnh chỉ bằng mô tả văn bản. Tạo ra những bức ảnh nghệ thuật, minh họa hoặc khái niệm hoàn toàn từ trí tưởng tượng.',
-      videoPath: 'assets/videos/text_to_image.mp4',
-      icon: Icons.image_rounded,
-      gradient: const LinearGradient(
-        colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+      description: 'Biến ý tưởng thành hình ảnh thực tế chỉ bằng cách mô tả bằng lời. AI sẽ hiểu và tạo ra những bức ảnh tuyệt đẹp theo đúng mô tả của bạn. Từ phong cảnh thơ mộng, nhân vật anime, đến thiết kế logo, mọi ý tưởng đều có thể thành hiện thực với chất lượng chuyên nghiệp.',
+      videoPath: 'assets/videos/text-to-image_1753972669268.mp4',
+      icon: Icons.create,
+      gradient: LinearGradient(
+        colors: [Color(0xFF00d2ff), Color(0xFF3a7bd5)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
+      operation: 'textToImage',
+    ),
+    Feature(
+      title: 'Chụp ảnh sản phẩm',
+      description: 'Tự động tạo nên những bức ảnh sản phẩm chuyên nghiệp như studio với nền đẹp và ánh sáng hoàn hảo. AI sẽ phân tích sản phẩm và tự động tạo môi trường, bối cảnh phù hợp. Lý tưởng cho thương mại điện tử, catalog sản phẩm, hoặc quảng cáo trên mạng xã hội.',
+      videoPath: 'assets/videos/anh-san-pham_1753972669244.mp4',
+      icon: Icons.camera_alt,
+      gradient: LinearGradient(
+        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      operation: 'productPhotography',
     ),
   ];
 
   @override
   void initState() {
     super.initState();
-    _checkVideoService();
+    _loadingController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _loadingAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _loadingController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _startLoading();
   }
 
-  void _checkVideoService() async {
-    if (!_videoService.isInitialized) {
-      await _videoService.preloadAllVideos();
-    }
+  void _startLoading() async {
+    _loadingController.repeat();
+    
+    // Preload all videos
+    await VideoPreloadService.instance.preloadAllVideos(features);
+    
+    // Simulate minimum loading time for better UX
+    await Future.delayed(const Duration(milliseconds: 2000));
     
     if (mounted) {
       setState(() {
-        _serviceReady = _videoService.isInitialized;
+        _isLoading = false;
       });
+      _loadingController.stop();
+      _loadingController.reset();
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.dark,
-      systemNavigationBarDividerColor: Colors.transparent,
-      systemNavigationBarContrastEnforced: false,
-    ));
+  void dispose() {
+    _loadingController.dispose();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -148,241 +178,95 @@ class _GenerationScreenState extends State<GenerationScreen> {
             stops: [0.0, 0.3, 0.7, 1.0],
           ),
         ),
-        child: SafeArea(
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              // Enhanced Header with Glass Effect
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.all(20),
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 30,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.3),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.auto_awesome,
-                                        color: Colors.white,
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'AI POWERED',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 1.2,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Tính năng AI ✨',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withOpacity(0.3),
-                                        offset: const Offset(0, 2),
-                                        blurRadius: 8,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Khám phá sức mạnh AI để biến đổi ảnh của bạn',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                          ),
+        child: _isLoading ? _buildLoadingScreen() : _buildMainContent(),
+      ),
+    );
+  }
+
+  Widget _buildLoadingScreen() {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedBuilder(
+              animation: _loadingAnimation,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _loadingAnimation.value * 2 * math.pi,
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white,
+                          Colors.white.withOpacity(0.8),
+                          Colors.white.withOpacity(0.3),
                         ],
+                        stops: [0.0, 0.5, 1.0],
                       ),
-                    ],
-                  ),
-                ),
-              ),
-
-            // Feature Grid or Loading with Enhanced Styling
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: _serviceReady 
-                ? SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 20,
+                      shape: BoxShape.circle,
                     ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final feature = features[index];
-                        return AnimatedContainer(
-                          duration: Duration(milliseconds: 300 + (index * 100)),
-                          curve: Curves.easeOutCubic,
-                          child: FeatureCard(
-                            feature: feature,
-                            videoController: _videoService.getController(feature.id),
-                            isVideoReady: _serviceReady,
-                            onTap: () => _onFeatureTap(feature),
-                            index: index,
-                          ),
-                        );
-                      },
-                      childCount: features.length,
-                    ),
-                  )
-                : SliverToBoxAdapter(
-                    child: Container(
-                      height: 400,
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.all(40),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(25),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.white.withOpacity(0.3),
-                                      Colors.white.withOpacity(0.1),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(40),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.3),
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.movie_creation_outlined,
-                                  color: Colors.white,
-                                  size: 36,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              Text(
-                                'Đang chuẩn bị video demo...',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Trải nghiệm sắp được bắt đầu',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white.withOpacity(0.8),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 24),
-                              Container(
-                                width: 200,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(3),
-                                  child: LinearProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    backgroundColor: Colors.transparent,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    child: Icon(
+                      Icons.auto_awesome,
+                      size: 40,
+                      color: Color(0xFF667eea),
                     ),
                   ),
+                );
+              },
             ),
-
-            // Bottom padding
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 100),
+            const SizedBox(height: 24),
+            Text(
+              'Đang chuẩn bị video demo...',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Trải nghiệm sắp được bắt đầu',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              width: 200,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(2),
+              ),
+              child: AnimatedBuilder(
+                animation: _loadingAnimation,
+                builder: (context, child) {
+                  return Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      width: 200 * _loadingAnimation.value,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -390,38 +274,217 @@ class _GenerationScreenState extends State<GenerationScreen> {
     );
   }
 
-  void _onFeatureTap(FeatureModel feature) {
-    // Navigate to upload screen with selected feature
-    Navigator.push(
-      context,
+  Widget _buildMainContent() {
+    return CustomScrollView(
+      slivers: [
+        // Glass Morphism Header
+        SliverToBoxAdapter(
+          child: Container(
+            margin: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withOpacity(0.3),
+                            Colors.white.withOpacity(0.1),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Text(
+                        'AI POWERED',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Chọn tính năng AI',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(0, 2),
+                        blurRadius: 4,
+                        color: Colors.black.withOpacity(0.3),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Khám phá sức mạnh trí tuệ nhân tạo',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Feature Grid
+        SliverGrid(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.75,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 20,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              return TweenAnimationBuilder<double>(
+                duration: Duration(milliseconds: 300 + (index * 100)),
+                tween: Tween(begin: 0.0, end: 1.0),
+                curve: Curves.easeOutBack,
+                builder: (context, value, child) {
+                  return Transform.translate(
+                    offset: Offset(0, 50 * (1 - value)),
+                    child: Opacity(
+                      opacity: value,
+                      child: FeatureCard(
+                        feature: features[index],
+                        onTap: () => _navigateToUpload(features[index]),
+                        isVideoReady: VideoPreloadService.instance.isVideoReady(features[index].videoPath),
+                        videoController: VideoPreloadService.instance.getController(features[index].videoPath),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+            childCount: features.length,
+          ),
+        ),
+
+        // Bottom Spacing with tip
+        SliverToBoxAdapter(
+          child: Container(
+            height: 120,
+            margin: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.05),
+                ],
+              ),
+            ),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Chọn tính năng phù hợp với nhu cầu của bạn',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _navigateToUpload(Feature feature) {
+    Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => UploadImageScreen(selectedFeature: feature.id),
+        builder: (context) => ImageUploadWidget(
+          selectedOperation: feature.operation,
+        ),
       ),
     );
   }
 }
 
 class FeatureCard extends StatefulWidget {
-  final FeatureModel feature;
-  final VideoPlayerController? videoController;
-  final bool isVideoReady;
+  final Feature feature;
   final VoidCallback onTap;
-  final int index;
+  final bool isVideoReady;
+  final VideoPlayerController? videoController;
 
   const FeatureCard({
-    super.key,
+    Key? key,
     required this.feature,
-    this.videoController,
-    required this.isVideoReady,
     required this.onTap,
-    required this.index,
-  });
+    required this.isVideoReady,
+    this.videoController,
+  }) : super(key: key);
 
   @override
   State<FeatureCard> createState() => _FeatureCardState();
 }
 
-class _FeatureCardState extends State<FeatureCard> 
+class _FeatureCardState extends State<FeatureCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -435,7 +498,6 @@ class _FeatureCardState extends State<FeatureCard>
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.95,
@@ -443,7 +505,6 @@ class _FeatureCardState extends State<FeatureCard>
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
-    
     _rotationAnimation = Tween<double>(
       begin: 0.0,
       end: 0.02,
@@ -461,32 +522,28 @@ class _FeatureCardState extends State<FeatureCard>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: Transform.rotate(
-            angle: _rotationAnimation.value,
-            child: GestureDetector(
-              onTapDown: (_) => _animationController.forward(),
-              onTapUp: (_) {
-                _animationController.reverse();
-                widget.onTap();
-              },
-              onTapCancel: () => _animationController.reverse(),
-              child: MouseRegion(
-                onEnter: (_) {
-                  setState(() => _isHovered = true);
-                },
-                onExit: (_) {
-                  setState(() => _isHovered = false);
-                },
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTapDown: (_) => _animationController.forward(),
+        onTapUp: (_) {
+          _animationController.reverse();
+          widget.onTap();
+        },
+        onTapCancel: () => _animationController.reverse(),
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value,
+              child: Transform.rotate(
+                angle: _rotationAnimation.value,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeOutCubic,
                   transform: Matrix4.identity()
-                    ..translate(0.0, _isHovered ? -8.0 : 0.0),
+                    ..translate(0.0, _isHovered ? -8.0 : 0.0, 0.0),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.95),
                     borderRadius: BorderRadius.circular(25),
@@ -616,10 +673,6 @@ class _FeatureCardState extends State<FeatureCard>
                                       ],
                                     ),
                                   ),
-                ),
-              ),
-            ),
-
                           ),
                         ),
                       ),
@@ -739,90 +792,32 @@ class _FeatureCardState extends State<FeatureCard>
                           ),
                         ),
                       ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class UploadImageScreen extends StatelessWidget {
-  final String selectedFeature;
-
-  const UploadImageScreen({
-    super.key,
-    required this.selectedFeature,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            child: Icon(
-              Icons.arrow_back_rounded,
-              color: Colors.grey[600],
-              size: 20,
-            ),
-          ),
-        ),
-        title: Text(
-          'Tải ảnh lên',
-          style: TextStyle(
-            color: Colors.grey[800],
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              Expanded(
-                child: ImageUploadWidget(preSelectedFeature: selectedFeature),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class FeatureModel {
-  final String id;
+class Feature {
   final String title;
   final String description;
   final String videoPath;
   final IconData icon;
   final LinearGradient gradient;
+  final String operation;
 
-  FeatureModel({
-    required this.id,
+  const Feature({
     required this.title,
     required this.description,
     required this.videoPath,
     required this.icon,
     required this.gradient,
+    required this.operation,
   });
 }
