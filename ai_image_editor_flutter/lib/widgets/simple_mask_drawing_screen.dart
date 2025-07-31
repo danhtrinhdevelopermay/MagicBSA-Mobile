@@ -46,9 +46,9 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen>
     super.initState();
     _loadImage();
     
-    // ✅ GRADIENT ANIMATION SETUP: Red→Orange→Green cycle during processing
+    // ✅ GRADIENT ANIMATION SETUP: Slow gradient position shift với white border blink
     _gradientController = AnimationController(
-      duration: const Duration(seconds: 2),
+      duration: const Duration(seconds: 4), // Slower animation
       vsync: this,
     );
     
@@ -57,7 +57,7 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _gradientController,
-      curve: Curves.easeInOut,
+      curve: Curves.linear, // Linear để gradient position shift mượt
     ));
   }
   
@@ -747,30 +747,67 @@ class AnimatedMaskPainter extends CustomPainter {
       paint,
     );
 
-    // ✅ ANIMATED GRADIENT MASK: Red→Orange→Green during processing
-    Color maskColor;
+    // ✅ GRADIENT MASK WITH POSITION SHIFTING & BLINKING BORDER
     if (isProcessing) {
-      // Animate through gradient: Red (0.0) → Orange (0.5) → Green (1.0)
-      if (animationValue < 0.5) {
-        // Red to Orange
-        final t = animationValue * 2; // 0.0 to 1.0
-        maskColor = Color.lerp(
-          const Color(0xFFFF4444), // Bright red
-          const Color(0xFFFF8800), // Orange
-          t,
-        )!;
-      } else {
-        // Orange to Green
-        final t = (animationValue - 0.5) * 2; // 0.0 to 1.0
-        maskColor = Color.lerp(
-          const Color(0xFFFF8800), // Orange
-          const Color(0xFF44FF44), // Bright green
-          t,
-        )!;
+      // Create gradient paint với position shifting
+      final gradientPaint = Paint()
+        ..shader = LinearGradient(
+          colors: const [
+            Color(0xFFFF4444), // Red
+            Color(0xFFFF8800), // Orange  
+            Color(0xFF44FF44), // Green
+            Color(0xFFFF8800), // Orange
+            Color(0xFFFF4444), // Red (cycle back)
+          ],
+          // ✅ GRADIENT POSITION SHIFT: Di chuyển vị trí gradient dựa trên animationValue
+          begin: Alignment(-1.0 + animationValue * 2, -1.0 + animationValue * 2),
+          end: Alignment(1.0 + animationValue * 2, 1.0 + animationValue * 2),
+        ).createShader(Rect.fromLTWH(offsetX, offsetY, displayWidth, displayHeight));
+
+      // Draw gradient mask strokes
+      for (final stroke in maskStrokes) {
+        final center = Offset(
+          offsetX + stroke.dx,
+          offsetY + stroke.dy,
+        );
+        
+        // ✅ FIXED SIZE: Mask size không thay đổi
+        final radius = brushSize / 2;
+        
+        canvas.drawCircle(center, radius, gradientPaint);
+        
+        // ✅ BLINKING WHITE BORDER: Viền trắng nhấp nháy siêu chậm
+        final borderOpacity = (sin(animationValue * 2 * pi * 0.5) + 1) / 2; // Slow blink
+        final borderPaint = Paint()
+          ..color = Colors.white.withOpacity(borderOpacity * 0.8)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0;
+        
+        canvas.drawCircle(center, radius + 1, borderPaint);
       }
     } else {
-      // Normal drawing mode - static red
-      maskColor = const Color(0xFFFF4444);
+      // Normal drawing mode - static red với white border
+      final maskPaint = Paint()
+        ..color = const Color(0xFFFF4444).withOpacity(0.6);
+      
+      final borderPaint = Paint()
+        ..color = Colors.white.withOpacity(0.8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+
+      for (final stroke in maskStrokes) {
+        final center = Offset(
+          offsetX + stroke.dx,
+          offsetY + stroke.dy,
+        );
+        
+        final radius = brushSize / 2;
+        
+        // Draw filled mask
+        canvas.drawCircle(center, radius, maskPaint);
+        // Draw white border
+        canvas.drawCircle(center, radius + 1, borderPaint);
+      }
     }
 
     // Draw mask strokes with animated color
