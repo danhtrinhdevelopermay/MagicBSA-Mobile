@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/image_provider.dart';
 import '../services/clipdrop_service.dart';
-import 'mask_drawing_screen.dart';
+import 'simple_mask_drawing_screen.dart';
 import 'precision_mask_painter.dart';
 import '../screens/object_removal_screen.dart';
 
@@ -652,14 +652,22 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
               ),
               child: ListTile(
                 leading: const Icon(Icons.brush, color: Colors.blue),
-                title: const Text('Phương Pháp Chuẩn'),
-                subtitle: const Text('UI đầy đủ, phù hợp cho hầu hết người dùng'),
+                title: const Text('Phương Pháp Đơn Giản'),
+                subtitle: const Text('Mask drawing ổn định theo đúng Clipdrop API'),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => ObjectRemovalScreen(
-                        imageFile: widget.originalImage,
+                      builder: (context) => SimpleMaskDrawingScreen(
+                        originalImage: widget.originalImage,
+                        onMaskCreated: (maskFile) {
+                          final provider = context.read<ImageEditProvider>();
+                          provider.processImageWithMask(
+                            ProcessingOperation.cleanup,
+                            maskFile: maskFile,
+                          );
+                          Navigator.of(context).pop(); // Return to main screen
+                        },
                       ),
                     ),
                   );
