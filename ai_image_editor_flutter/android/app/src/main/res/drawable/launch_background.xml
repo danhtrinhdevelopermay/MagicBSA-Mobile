@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- ✅ INSTANT SPLASH: Optimized launch screen for immediate display -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Background gradient -->
+    <!-- Background gradient - matches splash screen exactly -->
     <item>
         <shape android:shape="rectangle">
             <gradient
@@ -12,11 +12,20 @@
         </shape>
     </item>
 
-    <!-- App logo in center -->
+    <!-- App logo in center - optimized size for instant rendering -->
     <item android:gravity="center">
         <bitmap android:src="@mipmap/ic_launcher"
                 android:gravity="center"
-                android:width="120dp"
-                android:height="120dp" />
+                android:width="100dp"
+                android:height="100dp" />
+    </item>
+    
+    <!-- App name below logo for immediate brand recognition -->
+    <item android:gravity="center|bottom"
+          android:bottom="200dp">
+        <shape android:shape="rectangle">
+            <size android:width="200dp" android:height="40dp" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
     </item>
 </layer-list>

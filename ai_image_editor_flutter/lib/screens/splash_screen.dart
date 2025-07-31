@@ -37,18 +37,19 @@ class _SplashScreenState extends State<SplashScreen>
       systemNavigationBarContrastEnforced: false,
     ));
 
+    // ✅ FASTER ANIMATIONS: Reduced durations for quicker startup
     _logoController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 800), // Reduced from 1500ms
       vsync: this,
     );
     
     _textController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 600), // Reduced from 1000ms
       vsync: this,
     );
     
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 300), // Reduced from 500ms
       vsync: this,
     );
 
@@ -96,19 +97,22 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _startAnimations() async {
-    // Start background music when splash screen begins
-    await AudioService().playBackgroundMusic();
+    // ✅ NON-BLOCKING BACKGROUND MUSIC: Don't wait for audio
+    AudioService().playBackgroundMusic().catchError((e) {
+      print('Background music failed: $e');
+    });
     
-    await Future.delayed(const Duration(milliseconds: 300));
+    // ✅ MUCH FASTER TIMING: Reduced all delays significantly
+    await Future.delayed(const Duration(milliseconds: 100)); // Reduced from 300ms
     _logoController.forward();
     
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 400)); // Reduced from 800ms  
     _textController.forward();
     
-    await Future.delayed(const Duration(milliseconds: 2000));
+    await Future.delayed(const Duration(milliseconds: 800)); // Reduced from 2000ms
     _fadeController.forward();
     
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 200)); // Reduced from 500ms
     _navigateToMainScreen();
   }
 

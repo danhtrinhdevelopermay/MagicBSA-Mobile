@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Theme setting is off -->
+    <!-- ✅ INSTANT LAUNCH THEME: Optimized for immediate display -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <!-- Show a splash screen on the activity. Automatically removed when
-             the Flutter engine draws its first frame -->
+        <!-- Instant splash screen display -->
         <item name="android:windowBackground">@drawable/launch_background</item>
-        <!-- Enable edge-to-edge display -->
+        
+        <!-- ✅ PERFORMANCE OPTIMIZATIONS for faster rendering -->
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        
+        <!-- ✅ INSTANT DISPLAY: Prevent window animations that cause delay -->
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowIsFloating">false</item>
+        
+        <!-- Edge-to-edge display -->
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:windowTranslucentNavigation">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
