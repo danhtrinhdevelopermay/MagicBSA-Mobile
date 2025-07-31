@@ -58,31 +58,30 @@ class _MainScreenState extends State<MainScreen> {
       builder: (context, provider, child) {
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
-          extendBodyBehindAppBar: true,
-          extendBody: true,
           resizeToAvoidBottomInset: false,
-          body: Stack(
+          body: Column(
             children: [
               // Main content with PageView
-              PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                children: [
-                  // Home Page
-                  SafeArea(
-                    child: Column(
+              Expanded(
+                child: Stack(
+                  children: [
+                    PageView(
+                      controller: _pageController,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentIndex = index;
+                        });
+                      },
                       children: [
-                        Expanded(
+                        // Home Page
+                        SafeArea(
+                          bottom: false, // Don't apply bottom safe area
                           child: SingleChildScrollView(
                             padding: const EdgeInsets.only(
                               left: 16,
                               right: 16,
                               top: 20,
-                              bottom: 110,
+                              bottom: 20,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,44 +154,39 @@ class _MainScreenState extends State<MainScreen> {
                             ),
                           ),
                         ),
+                        
+                        // History Page
+                        const HistoryScreen(),
+                        
+                        // Premium Page
+                        const PremiumScreen(),
+                        
+                        // Profile Page
+                        const ProfileScreen(),
                       ],
                     ),
-                  ),
-                  
-                  // History Page
-                  const HistoryScreen(),
-                  
-                  // Premium Page
-                  const PremiumScreen(),
-                  
-                  // Profile Page
-                  const ProfileScreen(),
-                ],
+                    
+                    // Loading Overlay
+                    if (provider.currentOperation != null)
+                      LoadingOverlayWidget(
+                        isVisible: provider.currentOperation != null,
+                        message: provider.currentOperation?.toString() ?? 'Đang xử lý...',
+                      ),
+                      
+                    // Audio Controls
+                    Positioned(
+                      top: MediaQuery.of(context).padding.top + 20,
+                      right: 20,
+                      child: const AudioControlsWidget(),
+                    ),
+                  ],
+                ),
               ),
               
-              // Loading Overlay
-              if (provider.currentOperation != null)
-                LoadingOverlayWidget(
-                  isVisible: provider.currentOperation != null,
-                  message: provider.currentOperation?.toString() ?? 'Đang xử lý...',
-                ),
-                
-              // Audio Controls
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 20,
-                right: 20,
-                child: const AudioControlsWidget(),
-              ),
-              
-              // Modern Bottom Navigation
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: BottomNavigationWidget(
-                  currentIndex: _currentIndex,
-                  onTap: _onTabTapped,
-                ),
+              // Bottom Navigation - Fixed at bottom
+              BottomNavigationWidget(
+                currentIndex: _currentIndex,
+                onTap: _onTabTapped,
               ),
             ],
           ),
