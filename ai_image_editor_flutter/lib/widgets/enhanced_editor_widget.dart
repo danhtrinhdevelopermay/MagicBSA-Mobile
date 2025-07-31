@@ -690,8 +690,7 @@ class _EnhancedEditorWidgetState extends State<EnhancedEditorWidget> {
                           final provider = context.read<ImageEditProvider>();
                           provider.processImageWithMask(
                             ProcessingOperation.cleanup,
-                            widget.originalImage,
-                            maskFile,
+                            maskFile: maskFile,
                           );
                           Navigator.of(context).pop(); // Return to main screen
                         },
