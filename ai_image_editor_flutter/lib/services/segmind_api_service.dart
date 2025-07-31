@@ -72,7 +72,7 @@ class SegmindApiService {
       } else {
         throw SegmindApiException(
           'Failed to generate video: ${response.statusCode}',
-          response.statusCode,
+          response.statusCode ?? 0,
         );
       }
     } on DioException catch (e) {
