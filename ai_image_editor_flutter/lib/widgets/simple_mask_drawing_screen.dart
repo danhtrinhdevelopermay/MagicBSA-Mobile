@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
@@ -146,6 +147,19 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
                         child: const Text('Xóa tất cả'),
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    // Debug test button
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _createTestMask,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text('Test'),
+                      ),
+                    ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: ElevatedButton(
@@ -177,6 +191,27 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
   void _clearMask() {
     setState(() {
       _maskStrokes.clear();
+    });
+  }
+
+  // Test method to create a simple mask for debugging
+  void _createTestMask() {
+    setState(() {
+      _maskStrokes.clear();
+      // Add a few test strokes in center area
+      final centerX = _originalImageUI.width / 2;
+      final centerY = _originalImageUI.height / 2;
+      
+      // Create a small circle of strokes
+      for (int i = 0; i < 20; i++) {
+        final angle = (i / 20) * 2 * 3.14159;
+        final radius = 30.0;
+        final x = centerX + radius * cos(angle);
+        final y = centerY + radius * sin(angle);
+        _maskStrokes.add(Offset(x, y));
+      }
+      
+      print('Created test mask with ${_maskStrokes.length} strokes');
     });
   }
 
@@ -269,19 +304,30 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
     
     final width = originalImage.width;
     final height = originalImage.height;
+    
+    print('=== MASK CREATION DEBUG ===');
+    print('Original image dimensions: ${width}x${height}');
+    print('UI image dimensions: ${_originalImageUI.width}x${_originalImageUI.height}');
+    print('Total strokes to process: ${_maskStrokes.length}');
+    print('Brush size: $_brushSize');
 
-    // Create binary mask image (RGB format)
+    // Create binary mask image (RGB format for compatibility)
     final maskImage = img.Image(width: width, height: height);
     img.fill(maskImage, color: img.ColorRgb8(0, 0, 0)); // Black background (keep)
 
+    int totalPixelsDrawn = 0;
+    
     // Draw white strokes on mask (remove areas)
-    for (final stroke in _maskStrokes) {
+    for (int strokeIndex = 0; strokeIndex < _maskStrokes.length; strokeIndex++) {
+      final stroke = _maskStrokes[strokeIndex];
       // Convert screen coordinates to image coordinates
       final x = (stroke.dx * width / _originalImageUI.width).round();
       final y = (stroke.dy * height / _originalImageUI.height).round();
       
-      // Draw brush circle
-      final brushRadius = (_brushSize * width / _originalImageUI.width).round();
+      print('Stroke $strokeIndex: UI(${stroke.dx.toInt()}, ${stroke.dy.toInt()}) -> Image($x, $y)');
+      
+      // Draw brush circle - make it larger for better visibility
+      final brushRadius = max(3, (_brushSize * width / _originalImageUI.width * 1.5).round());
       
       for (int dx = -brushRadius; dx <= brushRadius; dx++) {
         for (int dy = -brushRadius; dy <= brushRadius; dy++) {
@@ -293,10 +339,24 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
             if (distance <= brushRadius * brushRadius) {
               // White pixel = remove (255)
               maskImage.setPixelRgb(px, py, 255, 255, 255);
+              totalPixelsDrawn++;
             }
           }
         }
       }
+    }
+
+    print('Total pixels drawn on mask: $totalPixelsDrawn');
+    print('Mask coverage: ${(totalPixelsDrawn / (width * height) * 100).toStringAsFixed(2)}%');
+    
+    // Validate mask has some content
+    if (totalPixelsDrawn == 0) {
+      print('WARNING: No pixels drawn on mask!');
+      throw Exception('Không có vùng nào được vẽ để xóa. Vui lòng vẽ trên ảnh trước khi xử lý.');
+    }
+    
+    if (totalPixelsDrawn < 100) {
+      print('WARNING: Very few pixels drawn (${totalPixelsDrawn})');
     }
 
     // Save mask to temporary file
@@ -306,9 +366,22 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
     final pngBytes = img.encodePng(maskImage);
     await maskFile.writeAsBytes(pngBytes);
 
-    print('Mask file created: ${maskFile.path}');
-    print('Mask dimensions: ${width}x${height}');
-    print('Total strokes: ${_maskStrokes.length}');
+    print('Mask file saved: ${maskFile.path}');
+    print('Mask file size: ${pngBytes.length} bytes');
+    
+    // Also save mask to Downloads for debugging (optional)
+    try {
+      final downloadDir = Directory('/storage/emulated/0/Download');
+      if (await downloadDir.exists()) {
+        final debugMaskFile = File('${downloadDir.path}/debug_mask_${DateTime.now().millisecondsSinceEpoch}.png');
+        await debugMaskFile.writeAsBytes(pngBytes);
+        print('Debug mask saved to Downloads: ${debugMaskFile.path}');
+      }
+    } catch (e) {
+      print('Could not save debug mask to Downloads: $e');
+    }
+    
+    print('=== MASK CREATION COMPLETE ===');
 
     return maskFile;
   }

@@ -298,10 +298,22 @@ class ClipDropService {
           break;
       }
 
+      print('=== CLIPDROP API CALL ===');
       print('Calling Clipdrop API: $apiUrl');
+      print('Operation: $operation');
       print('API Key: ${_currentApiKey.substring(0, 8)}...');
       print('Form data fields: ${formData.fields.map((e) => '${e.key}=${e.value}').join(', ')}');
       print('Form data files: ${formData.files.map((e) => e.key).join(', ')}');
+      
+      // Special logging for cleanup operation
+      if (operation == ProcessingOperation.cleanup) {
+        print('CLEANUP operation - mask file provided: ${maskFile != null}');
+        if (maskFile != null) {
+          final maskSize = await maskFile.length();
+          print('Mask file size: $maskSize bytes');
+          print('Mask file path: ${maskFile.path}');
+        }
+      }
 
       final response = await _dio.post(
         apiUrl,
@@ -311,35 +323,46 @@ class ClipDropService {
         ),
       );
 
+      print('=== CLIPDROP API RESPONSE ===');
       print('API Response status: ${response.statusCode}');
       print('Response headers: ${response.headers}');
       
       if (response.statusCode == 200) {
-        print('API call successful, image data size: ${response.data.length} bytes');
+        print('✅ API call successful!');
+        print('Response image data size: ${response.data.length} bytes');
+        
+        // Compare with original image size for cleanup operations
+        if (operation == ProcessingOperation.cleanup) {
+          final originalSize = await imageFile.length();
+          print('Original image size: $originalSize bytes');
+          print('Processed image size: ${response.data.length} bytes');
+          print('Size difference: ${((response.data.length - originalSize) / originalSize * 100).toStringAsFixed(1)}%');
+        }
         
         // Log credit information from headers
         final remainingCredits = response.headers.value('x-remaining-credits');
         final consumedCredits = response.headers.value('x-credits-consumed');
         if (remainingCredits != null) {
-          print('Credits remaining: $remainingCredits');
+          print('💳 Credits remaining: $remainingCredits');
         }
         if (consumedCredits != null) {
-          print('Credits consumed: $consumedCredits');
+          print('💳 Credits consumed: $consumedCredits');
         }
         
         // Clean up temporary files
         try {
           if (processedImageFile.path != imageFile.path) {
             await processedImageFile.delete();
-            print('Cleaned up resized image file');
+            print('🧹 Cleaned up resized image file');
           }
         } catch (e) {
-          print('Note: Could not clean up temporary file: $e');
+          print('⚠️ Note: Could not clean up temporary file: $e');
         }
         
+        print('=== CLIPDROP SUCCESS ===');
         return Uint8List.fromList(response.data);
       } else {
-        print('API error response: ${response.data}');
+        print('❌ API error response: ${response.data}');
         throw Exception('API error: ${response.statusCode} - ${response.statusMessage}');
       }
     });

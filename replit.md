@@ -16,13 +16,15 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
-✓ **ENHANCED OBJECT REMOVAL DEBUGGING** - Thêm debug logging và cải thiện UI feedback cho tính năng xóa vật thể:
-  - Added comprehensive debug logging throughout SimpleMaskDrawingScreen processing pipeline
-  - Enhanced error handling with proper dialog cleanup and detailed error messages  
-  - Improved setProcessedImage method to auto-save to history and provide UI feedback
-  - Added success notification with scroll instruction after processing completes
-  - Enhanced provider state management with proper progress and operation clearing
-  - User giờ sẽ thấy thông báo thành công và hướng dẫn kéo xuống để xem kết quả sau khi xử lý
+✓ **COMPREHENSIVE OBJECT REMOVAL DEBUGGING** - Thêm debug logging chi tiết và test tools cho tính năng xóa vật thể:
+  - Added comprehensive debug logging trong SimpleMaskDrawingScreen: mask creation, coordinate mapping, pixel counting
+  - Enhanced ClipDropService với detailed API call logging, response analysis, và credit tracking
+  - Added mask validation với pixel count, coverage percentage, và warning thresholds
+  - Improved setProcessedImage method để auto-save to history và provide UI feedback
+  - Added debug mask saving to Downloads folder để user có thể kiểm tra mask files
+  - Enhanced provider state management với proper progress và operation clearing
+  - Added test mask creation button để debug coordinate mapping và API calls
+  - User giờ sẽ thấy detailed console logs để debug vấn đề và verify mask creation accuracy
   
 ✓ **FIXED OBJECT REMOVAL FEATURE** - Khắc phục lỗi tính năng xóa vật thể không trả về kết quả:
   - Fixed SimpleMaskDrawingScreen to use proper processImage() method instead of non-existent cleanup() method
