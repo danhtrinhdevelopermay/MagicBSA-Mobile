@@ -16,6 +16,12 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **FIXED LAUNCHER ICON ZOOM ISSUE** - Khắc phục logo bị zoom quá lớn trên Android launcher:
+  - Fixed adaptive icon foreground với proper safe area padding (70% scale với transparent background)
+  - Reduced standard launcher icons to 85% size để tránh bị zoom quá lớn
+  - Used ImageMagick -gravity center -extent để center logo trong canvas với padding
+  - Logo giờ hiển thị đúng kích thước trên launcher không bị cắt hay zoom quá lớn
+
 ✓ **UPDATED APP LOGO** - Thay đổi logo Android app thành gradient star design mới:
   - Replaced app logo với new 1024x1024 gradient star logo (blue to purple)
   - Generated all Android launcher icon densities (48px to 192px) preserving quality
