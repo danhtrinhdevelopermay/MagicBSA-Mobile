@@ -24,6 +24,7 @@ class ImageEditProvider extends ChangeNotifier {
   String _errorMessage = '';
   String? _currentOperation;
   double _progress = 0.0;
+  ProcessingOperation? _lastCompletedOperation; // Track last operation for auto-scroll control
   
   // Callback function for when image is picked successfully
   Function(File)? _onImagePicked;
@@ -35,6 +36,7 @@ class ImageEditProvider extends ChangeNotifier {
   String get errorMessage => _errorMessage;
   String? get currentOperation => _currentOperation;
   double get progress => _progress;
+  ProcessingOperation? get lastCompletedOperation => _lastCompletedOperation;
   
   // Set callback for image picked
   void setOnImagePickedCallback(Function(File)? callback) {
@@ -148,6 +150,7 @@ class ImageEditProvider extends ChangeNotifier {
       }
       
       _processedImage = result;
+      _lastCompletedOperation = operation; // Track completed operation for auto-scroll control
       _currentOperation = null; // Clear current operation when completed
       _setState(ProcessingState.completed);
       _progress = 1.0;
@@ -231,11 +234,12 @@ class ImageEditProvider extends ChangeNotifier {
     _setState(ProcessingState.idle);
   }
 
-  // Set processed image (for external processing results)
+  // Set processed image (for external processing results - used by object removal)
   void setProcessedImage(Uint8List imageData) {
     print('Setting processed image in provider...');
     print('Image data size: ${imageData.length} bytes');
     _processedImage = imageData;
+    _lastCompletedOperation = ProcessingOperation.cleanup; // Mark as cleanup operation
     _currentOperation = null; // Clear current operation
     _progress = 1.0; // Set progress to complete
     _setState(ProcessingState.completed);
@@ -260,6 +264,7 @@ class ImageEditProvider extends ChangeNotifier {
     _processedImage = null;
     _errorMessage = '';
     _currentOperation = null;
+    _lastCompletedOperation = null;
     _progress = 0.0;
     _setState(ProcessingState.idle);
   }

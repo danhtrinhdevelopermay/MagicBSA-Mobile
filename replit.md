@@ -18,6 +18,16 @@ Focus on practical, working solutions. solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **IMPLEMENTED AUTO-SCROLL TO RESULTS FEATURE** - Added automatic scrolling to show results after image processing completion:
+  - Enhanced EditorScreen with ScrollController và GlobalKey để track result widget position
+  - Added listener to ImageEditProvider state changes để trigger auto-scroll khi processing completed
+  - Implemented smart operation tracking với _lastCompletedOperation để exclude object removal/cleanup từ auto-scroll
+  - Used Scrollable.ensureVisible với smooth animation (800ms duration, easeInOutQuart curve, 10% từ top)
+  - Auto-scroll chỉ hoạt động cho các operations: removeBackground, removeText, uncrop, reimagine, productPhotography, textToImage, replaceBackground, imageUpscaling
+  - Object removal/cleanup operations được exclude để tránh interfere với existing navigation flow
+  - Clean implementation với proper cleanup trong dispose() và error handling
+  - User experience cải thiện: automatically shows results sau khi AI processing hoàn thành
+
 ✓ **CRITICAL FIX: GITHUB ACTIONS APK BUILD COMPILATION ERROR** - Khắc phục lỗi compilation blocking APK build:
   - Fixed critical error in simple_mask_drawing_screen.dart line 815: "The getter 'maskColor' isn't defined for class 'AnimatedMaskPainter'"
   - Removed duplicate code sót lại sau animation effects update
