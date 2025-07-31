@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/image_provider.dart';
 import '../models/processing_operation.dart';
 import '../widgets/floating_bottom_navigation.dart';
-import '../screens/simple_mask_drawing_screen.dart';
+// import '../screens/simple_mask_drawing_screen.dart'; // TODO: Create this screen
 import '../widgets/result_widget.dart';
 import '../widgets/loading_overlay_widget.dart';
 
@@ -112,17 +112,13 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _navigateToMaskDrawing() {
-    final provider = Provider.of<ImageEditProvider>(context, listen: false);
-    if (provider.originalImage != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SimpleMaskDrawingScreen(
-            originalImage: provider.originalImage!,
-          ),
-        ),
-      );
-    }
+    // TODO: Implement mask drawing screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Tính năng vẽ mask đang được phát triển'),
+        backgroundColor: Colors.orange,
+      ),
+    );
   }
 
   void _startOver() {
@@ -236,10 +232,24 @@ class _EditorScreenState extends State<EditorScreen> {
           );
         }
 
-        // Cleanup operation cần mask drawing
+        // Cleanup operation cần mask drawing - hiện tại chưa implement
         if (operation == ProcessingOperation.cleanup && provider.originalImage != null) {
-          return SimpleMaskDrawingScreen(
-            originalImage: provider.originalImage!,
+          return Scaffold(
+            backgroundColor: Colors.grey[50],
+            body: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.construction, size: 64, color: Colors.orange),
+                  SizedBox(height: 16),
+                  Text(
+                    'Tính năng vẽ mask đang được phát triển',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+            bottomNavigationBar: const FloatingBottomNavigation(),
           );
         }
 

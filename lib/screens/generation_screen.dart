@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:provider/provider.dart';
-import '../providers/image_edit_provider.dart';
+import '../providers/image_provider.dart';
 import '../models/processing_operation.dart';
 import '../widgets/floating_bottom_navigation.dart';
 
