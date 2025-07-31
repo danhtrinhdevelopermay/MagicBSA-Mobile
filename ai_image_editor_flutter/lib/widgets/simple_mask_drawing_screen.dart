@@ -214,9 +214,10 @@ class _SimpleMaskDrawingScreenState extends State<SimpleMaskDrawingScreen> {
 
       // Process with ClipDrop API
       final clipDropService = ClipDropService();
-      final result = await clipDropService.cleanup(
+      final result = await clipDropService.processImage(
         widget.originalImage,
-        maskFile,
+        ProcessingOperation.cleanup,
+        maskFile: maskFile,
         mode: 'fast',
       );
 

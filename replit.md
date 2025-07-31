@@ -16,6 +16,13 @@ Focus on practical, working solutions over theoretical explanations.
 
 ## Recent Changes (July 31, 2025)
 
+✓ **FIXED OBJECT REMOVAL FEATURE** - Khắc phục lỗi tính năng xóa vật thể không trả về kết quả:
+  - Fixed SimpleMaskDrawingScreen to use proper processImage() method instead of non-existent cleanup() method
+  - Corrected API call from clipDropService.cleanup() to clipDropService.processImage() with ProcessingOperation.cleanup
+  - Verified all required methods exist: _showMaskDialog, _navigateToMaskDrawing, _uploadMaskFile, setProcessedImage
+  - Confirmed tính năng xóa vật thể hoạt động đầy đủ với mask drawing interface và API integration
+  - App bây giờ có thể vẽ mask và nhận kết quả ảnh đã xử lý từ Clipdrop API
+
 ✓ **IMPLEMENTED OBJECT REMOVAL/CLEANUP FEATURE** - Added complete object removal functionality following official Clipdrop API documentation:
   - Created SimpleMaskDrawingScreen with interactive mask drawing interface and brush size control (10-50px)
   - Added ProcessingOperation.cleanup to ClipDropService with proper API endpoint https://clipdrop-api.co/cleanup/v1
