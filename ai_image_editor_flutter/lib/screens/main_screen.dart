@@ -59,136 +59,127 @@ class _MainScreenState extends State<MainScreen> {
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
           resizeToAvoidBottomInset: false,
-          body: Column(
+          body: Stack(
             children: [
-              // Main content with PageView
-              Expanded(
-                child: Stack(
-                  children: [
-                    PageView(
-                      controller: _pageController,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentIndex = index;
-                        });
-                      },
-                      children: [
-                        // Home Page
-                        SafeArea(
-                          bottom: false, // Don't apply bottom safe area
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.only(
-                              left: 16,
-                              right: 16,
-                              top: 20,
-                              bottom: 20,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Header
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Chào mừng! 👋',
-                                          style: TextStyle(
-                                            fontSize: 28,
-                                            fontWeight: FontWeight.bold,
-                                            foreground: Paint()
-                                              ..shader = const LinearGradient(
-                                                colors: [
-                                                  Color(0xFF6366F1),
-                                                  Color(0xFF8B5CF6),
-                                                  Color(0xFFEC4899),
-                                                ],
-                                              ).createShader(
-                                                const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0),
-                                              ),
-                                          ),
+              PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                children: [
+                  // Home Page
+                  SafeArea(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 20,
+                        bottom: 100, // Extra bottom padding for navigation
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Chào mừng! 👋',
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      foreground: Paint()
+                                        ..shader = const LinearGradient(
+                                          colors: [
+                                            Color(0xFF6366F1),
+                                            Color(0xFF8B5CF6),
+                                            Color(0xFFEC4899),
+                                          ],
+                                        ).createShader(
+                                          const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0),
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Chỉnh sửa ảnh với AI',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.grey[600],
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFF6366F1).withOpacity(0.3),
-                                            blurRadius: 12,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.auto_fix_high_rounded,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Chỉnh sửa ảnh với AI',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 32),
-                                
-                                // Upload Section
-                                const ImageUploadWidget(),
-                              ],
-                            ),
+                                child: const Icon(
+                                  Icons.auto_fix_high_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        
-                        // History Page
-                        const HistoryScreen(),
-                        
-                        // Premium Page
-                        const PremiumScreen(),
-                        
-                        // Profile Page
-                        const ProfileScreen(),
-                      ],
-                    ),
-                    
-                    // Loading Overlay
-                    if (provider.currentOperation != null)
-                      LoadingOverlayWidget(
-                        isVisible: provider.currentOperation != null,
-                        message: provider.currentOperation?.toString() ?? 'Đang xử lý...',
+                          const SizedBox(height: 32),
+                          
+                          // Upload Section
+                          const ImageUploadWidget(),
+                        ],
                       ),
-                      
-                    // Audio Controls
-                    Positioned(
-                      top: MediaQuery.of(context).padding.top + 20,
-                      right: 20,
-                      child: const AudioControlsWidget(),
                     ),
-                  ],
-                ),
+                  ),
+                  
+                  // History Page
+                  const HistoryScreen(),
+                  
+                  // Premium Page
+                  const PremiumScreen(),
+                  
+                  // Profile Page
+                  const ProfileScreen(),
+                ],
               ),
               
-              // Bottom Navigation - Fixed at bottom
-              BottomNavigationWidget(
-                currentIndex: _currentIndex,
-                onTap: _onTabTapped,
+              // Loading Overlay
+              if (provider.currentOperation != null)
+                LoadingOverlayWidget(
+                  isVisible: provider.currentOperation != null,
+                  message: provider.currentOperation?.toString() ?? 'Đang xử lý...',
+                ),
+                
+              // Audio Controls
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 20,
+                right: 20,
+                child: const AudioControlsWidget(),
               ),
             ],
+          ),
+          // ✅ CRITICAL FIX: Use bottomNavigationBar instead of Column
+          bottomNavigationBar: BottomNavigationWidget(
+            currentIndex: _currentIndex,
+            onTap: _onTabTapped,
           ),
         );
       },
