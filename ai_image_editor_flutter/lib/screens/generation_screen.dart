@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/image_upload_widget.dart';
+import '../widgets/animatediff_widget.dart';
 
 class GenerationScreen extends StatefulWidget {
   const GenerationScreen({Key? key}) : super(key: key);
@@ -111,16 +112,16 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
       gifPath: 'assets/gifs/product-photography.gif',
     ),
     Feature(
-      title: 'Tạo video từ ảnh',
-      description: 'Biến ảnh thành video sống động',
+      title: 'Tạo video từ ảnh Pro',
+      description: 'AnimateDiff AI biến ảnh thành video sống động',
       icon: Icons.videocam,
       gradient: LinearGradient(
-        colors: [Color(0xFFff9a56), Color(0xFFff6b95)],
+        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
-      operation: 'imageToVideo',
-      gifPath: null, // No demo GIF for this feature
+      operation: 'animateDiffVideo',
+      gifPath: 'assets/gifs/text-to-image.gif', // Using existing GIF as placeholder demo
     ),
   ];
 
@@ -545,13 +546,41 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
   }
 
   void _navigateToUpload(String operation) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ImageUploadWidget(
-          preSelectedFeature: operation,
+    if (operation == 'animateDiffVideo') {
+      // Navigate to AnimateDiff widget instead of upload widget
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => Scaffold(
+            backgroundColor: const Color(0xFF1a1a1a),
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                'AnimateDiff Pro',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            body: const AnimateDiffWidget(),
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      // Navigate to normal upload widget for other features
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ImageUploadWidget(
+            preSelectedFeature: operation,
+          ),
+        ),
+      );
+    }
   }
 }
 
