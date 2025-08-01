@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../widgets/image_upload_widget.dart';
+import 'feature_upload_screen.dart';
 
 
 class GenerationScreen extends StatefulWidget {
@@ -535,11 +535,17 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
   }
 
   void _navigateToUpload(String operation) {
-    // Navigate to normal upload widget for all features
+    // Tìm feature tương ứng để lấy thông tin
+    final feature = features.firstWhere((f) => f.operation == operation);
+    
+    // Navigate to feature-specific upload screen
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ImageUploadWidget(
-          preSelectedFeature: operation,
+        builder: (context) => FeatureUploadScreen(
+          featureOperation: operation,
+          featureTitle: feature.title,
+          featureIcon: feature.icon,
+          featureGradient: feature.gradient,
         ),
       ),
     );

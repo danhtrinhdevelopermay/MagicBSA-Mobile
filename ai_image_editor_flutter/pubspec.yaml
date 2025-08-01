@@ -68,8 +68,7 @@ dependencies:
   onesignal_flutter: ^5.0.4
   curved_navigation_bar: ^1.0.6
   
-  # Phosphor Icons for modern icon design
-  phosphor_flutter: ^2.1.0
+
   
   # Video player for feature demonstrations (keeping for backward compatibility)
   video_player: ^2.8.2
