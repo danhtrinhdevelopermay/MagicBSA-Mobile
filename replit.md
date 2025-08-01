@@ -56,6 +56,13 @@ The mobile application is developed using Flutter 3.22.0 and Dart, employing the
 
 ## Recent Changes (August 1, 2025)
 
+✓ **CRITICAL FIX: APK Build Compilation Error** - Fixed duplicate method declaration causing GitHub Actions build failure:
+  - Fixed duplicate `getAvailableDurations()` method in SegmindApiService 
+  - Removed legacy LTX Video methods (aspect ratios, target sizes)
+  - Updated `getDurationDescription()` for Kling API compatibility (seconds vs frames)
+  - Completed migration cleanup from LTX Video to Kling Image2Video API
+  - GitHub Actions APK build should now compile successfully
+
 ✓ **UPGRADED: LTX VIDEO API FOR IMAGE-TO-VIDEO GENERATION** - Major upgrade to cutting-edge LTX Video model:
   - Migrated from Kling AI to LTX Video model (24fps real-time generation)
   - Updated SegmindApiService to use ltx-video endpoint with multipart/form-data

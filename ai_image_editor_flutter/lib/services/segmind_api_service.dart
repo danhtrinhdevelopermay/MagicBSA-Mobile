@@ -115,11 +115,6 @@ class SegmindApiService {
     return [5, 10]; // Duration in seconds
   }
 
-  /// Get available durations (in frames) for LTX Video
-  static List<int> getAvailableDurations() {
-    return [97, 129, 161, 193, 225, 257]; // Available frame counts from LTX Video API
-  }
-
   /// Get mode description
   static String getModeDescription(String mode) {
     switch (mode) {
@@ -132,21 +127,12 @@ class SegmindApiService {
     }
   }
 
-  /// Get duration description (convert frames to seconds at 24fps)
-  static String getDurationDescription(int frames) {
-    final seconds = (frames / 24.0).toStringAsFixed(1);
-    return '${seconds}s (${frames} frames)';
+  /// Get duration description for Kling Image2Video (in seconds)
+  static String getDurationDescription(int seconds) {
+    return '${seconds}s';
   }
 
-  /// Get available aspect ratios for LTX Video
-  static List<String> getAvailableAspectRatios() {
-    return ['1:1', '1:2', '2:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '9:21', '21:9'];
-  }
 
-  /// Get available target sizes for LTX Video
-  static List<int> getAvailableTargetSizes() {
-    return [512, 576, 640, 704, 768, 832, 896, 960, 1024];
-  }
 }
 
 class SegmindApiException implements Exception {
