@@ -9,6 +9,10 @@ Always provide manual Git push commands from root directory when making changes 
 Minimize code changes that could break GitHub Actions APK build process.
 Focus on practical, working solutions.
 
+**Important Code Change Protocol (from loinhac.md):**
+1. Khi có thay đổi code thí gửi kèm theo lệnh push git thủ công, push toàn bộ code trong thư mục gốc không cần cd
+2. Đảm bảo không ảnh hưởng đến việc build apk khi thay đổi hoặc phát triển ứng dụng
+
 ## System Architecture
 
 ### Web Application
