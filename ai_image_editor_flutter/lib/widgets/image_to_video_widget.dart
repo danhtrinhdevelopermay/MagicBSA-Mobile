@@ -20,9 +20,9 @@ class _ImageToVideoWidgetState extends State<ImageToVideoWidget>
   final TextEditingController _promptController = TextEditingController();
   final TextEditingController _negativePromptController = TextEditingController();
   
-  String _selectedMode = 'standard';
-  int _selectedDuration = 97; // Default to 97 frames (~4s)
-  double _cfgScale = 3.0; // LTX Video default CFG scale
+  String _selectedMode = 'std'; // Optimal resource-efficient mode
+  int _selectedDuration = 5; // Optimal 5 seconds for cost efficiency  
+  double _cfgScale = 0.5; // Optimal balanced creativity/adherence
   
   bool _isGenerating = false;
   double _progress = 0.0;
@@ -48,9 +48,9 @@ class _ImageToVideoWidgetState extends State<ImageToVideoWidget>
       curve: Curves.easeInOut,
     ));
     
-    // Default prompts optimized for LTX Video
-    _promptController.text = 'Smooth camera movement with cinematic lighting, gentle transitions, realistic motion, high quality video with natural flow and elegant cinematography';
-    _negativePromptController.text = 'low quality, worst quality, deformed, distorted, blurry, pixelated, artifacts';
+    // Default prompts optimized for Kling Image2Video (resource efficient)
+    _promptController.text = 'Smooth camera movement with cinematic lighting, gentle transitions, realistic motion';
+    _negativePromptController.text = 'No sudden movements, no fast zooms, low quality, distorted';
   }
 
   @override

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../widgets/image_upload_widget.dart';
+import 'feature_upload_screen.dart';
 
 
 class GenerationScreen extends StatefulWidget {
@@ -110,6 +110,18 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
       ),
       operation: 'productPhotography',
       gifPath: 'assets/gifs/product-photography.gif',
+    ),
+    Feature(
+      title: 'Tạo video từ ảnh',
+      description: 'Biến ảnh thành video sống động',
+      icon: Icons.video_camera_back,
+      gradient: LinearGradient(
+        colors: [Color(0xFFf093fb), Color(0xFFf5576c)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      operation: 'imageToVideo',
+      gifPath: 'assets/gifs/image-to-video.gif',
     ),
 
   ];
@@ -535,11 +547,17 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
   }
 
   void _navigateToUpload(String operation) {
-    // Navigate to normal upload widget for all features
+    // Find the feature data for the selected operation
+    final feature = features.firstWhere((f) => f.operation == operation);
+    
+    // Navigate to new feature upload screen
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ImageUploadWidget(
-          preSelectedFeature: operation,
+        builder: (context) => FeatureUploadScreen(
+          operation: operation,
+          title: feature.title,
+          description: feature.description,
+          gradient: feature.gradient,
         ),
       ),
     );

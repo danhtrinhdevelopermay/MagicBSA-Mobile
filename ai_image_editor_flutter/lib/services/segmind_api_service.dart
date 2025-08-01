@@ -22,59 +22,42 @@ class SegmindApiService {
     return base64Encode(bytes);
   }
 
-  /// Generate video from image using LTX Video model
+  /// Generate video from image using Kling Image2Video model (resource efficient)
   Future<Uint8List> generateVideoFromImage({
     required File imageFile,
     required String prompt,
     String? negativePrompt,
-    double cfgScale = 3.0, // Changed default to match LTX Video recommendations
-    String mode = 'standard', // Updated modes for LTX Video
-    int duration = 97, // LTX Video uses frame counts, default 97 frames (~4s at 24fps)
+    double cfgScale = 0.5, // Optimal resource-efficient setting (0-1)
+    String mode = 'std', // std = standard, pro = professional
+    int duration = 5, // Duration in seconds (5 or 10)
     Function(double)? onProgress,
   }) async {
     try {
-      // Prepare data according to LTX Video API spec
+      // Convert image to base64 for Kling API
+      final imageBase64 = _imageFileToBase64(imageFile);
+      
+      // Prepare data according to Kling Image2Video API spec
       final data = {
-        'cfg': cfgScale, // How strongly the video follows the prompt (1-20)
-        'seed': 2357108, // Set seed for reproducibility  
-        'image': 'null', // Will be replaced with image URI or file
-        'steps': mode == 'pro' ? 40 : 30, // More steps for pro mode
-        'length': duration, // Video length in frames
+        'image': imageBase64,
         'prompt': prompt,
-        'target_size': 640, // Target resolution
-        'aspect_ratio': '3:2', // Default aspect ratio
-        'negative_prompt': negativePrompt ?? 'low quality, worst quality, deformed, distorted',
+        'negative_prompt': negativePrompt ?? 'No sudden movements, no fast zooms, low quality, distorted',
+        'cfg_scale': cfgScale, // CFG scale to control how closely animation matches prompt (0-1)
+        'mode': mode, // std (standard) or pro (professional)  
+        'duration': duration, // Duration in seconds (5 or 10)
       };
 
       if (onProgress != null) {
         onProgress(0.1); // Started request
       }
 
-      // For LTX Video, we need to send image as multipart/form-data
-      final formData = FormData();
-      
-      // Add image file
-      final imageFile64 = await MultipartFile.fromFile(
-        imageFile.path,
-        filename: 'image.jpg',
-      );
-      formData.files.add(MapEntry('image', imageFile64));
-      
-      // Add other parameters
-      data.forEach((key, value) {
-        if (key != 'image') { // Skip image as it's already added
-          formData.fields.add(MapEntry(key, value.toString()));
-        }
-      });
-
       final response = await _dio.post(
-        '$_baseUrl/ltx-video',
-        data: formData,
+        '$_baseUrl/kling-image2video',
+        data: data,
         options: Options(
           responseType: ResponseType.bytes,
           validateStatus: (status) => status != null && status < 500,
           headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
           },
         ),
         onReceiveProgress: (received, total) {
@@ -122,9 +105,14 @@ class SegmindApiService {
     }
   }
 
-  /// Get available generation modes for LTX Video
+  /// Get available generation modes for Kling Image2Video
   static List<String> getAvailableModes() {
-    return ['standard', 'pro'];
+    return ['std', 'pro']; // std = standard (resource efficient), pro = professional
+  }
+
+  /// Get available durations for Kling Image2Video
+  static List<int> getAvailableDurations() {
+    return [5, 10]; // Duration in seconds
   }
 
   /// Get available durations (in frames) for LTX Video
