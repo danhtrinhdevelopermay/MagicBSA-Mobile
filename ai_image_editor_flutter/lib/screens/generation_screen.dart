@@ -13,41 +13,6 @@ class GenerationScreen extends StatefulWidget {
 class _GenerationScreenState extends State<GenerationScreen> with TickerProviderStateMixin {
   Map<String, VideoPlayerController?> _videoControllers = {};
   
-  @override
-  void initState() {
-    super.initState();
-    _initializeVideoControllers();
-  }
-  
-  @override
-  void dispose() {
-    _disposeVideoControllers();
-    super.dispose();
-  }
-  
-  void _initializeVideoControllers() {
-    for (var feature in features) {
-      if (feature.videoPath != null) {
-        final controller = VideoPlayerController.asset(feature.videoPath!)
-          ..initialize().then((_) {
-            if (mounted) {
-              setState(() {});
-              controller.setLooping(true);
-              controller.play();
-              controller.setVolume(0); // Mute videos
-            }
-          });
-        _videoControllers[feature.operation] = controller;
-      }
-    }
-  }
-  
-  void _disposeVideoControllers() {
-    for (var controller in _videoControllers.values) {
-      controller?.dispose();
-    }
-    _videoControllers.clear();
-  }
   final List<Feature> features = [
     Feature(
       title: 'Xóa nền ảnh',
@@ -158,6 +123,42 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
       videoPath: null, // No demo video for this feature
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideoControllers();
+  }
+  
+  @override
+  void dispose() {
+    _disposeVideoControllers();
+    super.dispose();
+  }
+  
+  void _initializeVideoControllers() {
+    for (var feature in features) {
+      if (feature.videoPath != null) {
+        final controller = VideoPlayerController.asset(feature.videoPath!)
+          ..initialize().then((_) {
+            if (mounted) {
+              setState(() {});
+              controller.setLooping(true);
+              controller.play();
+              controller.setVolume(0); // Mute videos
+            }
+          });
+        _videoControllers[feature.operation] = controller;
+      }
+    }
+  }
+  
+  void _disposeVideoControllers() {
+    for (var controller in _videoControllers.values) {
+      controller?.dispose();
+    }
+    _videoControllers.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
