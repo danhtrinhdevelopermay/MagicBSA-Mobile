@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:video_player/video_player.dart';
 import '../widgets/image_upload_widget.dart';
 
 class GenerationScreen extends StatefulWidget {
@@ -9,7 +10,44 @@ class GenerationScreen extends StatefulWidget {
   State<GenerationScreen> createState() => _GenerationScreenState();
 }
 
-class _GenerationScreenState extends State<GenerationScreen> {
+class _GenerationScreenState extends State<GenerationScreen> with TickerProviderStateMixin {
+  Map<String, VideoPlayerController?> _videoControllers = {};
+  
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideoControllers();
+  }
+  
+  @override
+  void dispose() {
+    _disposeVideoControllers();
+    super.dispose();
+  }
+  
+  void _initializeVideoControllers() {
+    for (var feature in features) {
+      if (feature.videoPath != null) {
+        final controller = VideoPlayerController.asset(feature.videoPath!)
+          ..initialize().then((_) {
+            if (mounted) {
+              setState(() {});
+              controller.setLooping(true);
+              controller.play();
+              controller.setVolume(0); // Mute videos
+            }
+          });
+        _videoControllers[feature.operation] = controller;
+      }
+    }
+  }
+  
+  void _disposeVideoControllers() {
+    for (var controller in _videoControllers.values) {
+      controller?.dispose();
+    }
+    _videoControllers.clear();
+  }
   final List<Feature> features = [
     Feature(
       title: 'Xóa nền ảnh',
@@ -21,6 +59,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
         end: Alignment.bottomRight,
       ),
       operation: 'removeBackground',
+      videoPath: 'assets/videos/remove-backgroud_1754010253262.mp4',
     ),
     Feature(
       title: 'Mở rộng ảnh',
@@ -32,6 +71,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
         end: Alignment.bottomRight,
       ),
       operation: 'uncrop',
+      videoPath: 'assets/videos/expand-image_1754010253290.mp4',
     ),
     Feature(
       title: 'Nâng cấp độ phân giải',
@@ -43,6 +83,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
         end: Alignment.bottomRight,
       ),
       operation: 'imageUpscaling',
+      videoPath: 'assets/videos/Upscaling_1754010253319.mp4',
     ),
     Feature(
       title: 'Xóa vật thể',
@@ -54,6 +95,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
         end: Alignment.bottomRight,
       ),
       operation: 'cleanup',
+      videoPath: 'assets/videos/cleanup_1754010253223.mp4',
     ),
     Feature(
       title: 'Xóa chữ khỏi ảnh',
@@ -65,6 +107,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
         end: Alignment.bottomRight,
       ),
       operation: 'removeText',
+      videoPath: 'assets/videos/remove-text-demo_1754010271325.mp4',
     ),
     Feature(
       title: 'Tái tạo ảnh AI',
@@ -76,6 +119,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
         end: Alignment.bottomRight,
       ),
       operation: 'reimagine',
+      videoPath: 'assets/videos/reimagine_1754010271349.mp4',
     ),
     Feature(
       title: 'Tạo ảnh từ văn bản',
@@ -87,6 +131,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
         end: Alignment.bottomRight,
       ),
       operation: 'textToImage',
+      videoPath: 'assets/videos/text-to-image_1754010271269.mp4',
     ),
     Feature(
       title: 'Chụp ảnh sản phẩm',
@@ -98,6 +143,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
         end: Alignment.bottomRight,
       ),
       operation: 'productPhotography',
+      videoPath: 'assets/videos/anh-san-pham_1754010271301.mp4',
     ),
     Feature(
       title: 'Tạo video từ ảnh',
@@ -109,6 +155,7 @@ class _GenerationScreenState extends State<GenerationScreen> {
         end: Alignment.bottomRight,
       ),
       operation: 'imageToVideo',
+      videoPath: null, // No demo video for this feature
     ),
   ];
 
@@ -186,21 +233,21 @@ class _GenerationScreenState extends State<GenerationScreen> {
                 ),
               ),
               
-              // Simple Grid
+              // Improved Grid
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   child: GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.9,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.85,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
                     ),
                     itemCount: features.length,
                     itemBuilder: (context, index) {
                       final feature = features[index];
-                      return _buildSimpleFeatureCard(feature);
+                      return _buildVideoFeatureCard(feature);
                     },
                   ),
                 ),
@@ -212,7 +259,9 @@ class _GenerationScreenState extends State<GenerationScreen> {
     );
   }
 
-  Widget _buildSimpleFeatureCard(Feature feature) {
+  Widget _buildVideoFeatureCard(Feature feature) {
+    final controller = _videoControllers[feature.operation];
+    
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -220,90 +269,135 @@ class _GenerationScreenState extends State<GenerationScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          gradient: feature.gradient,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: feature.gradient.colors.first.withOpacity(0.3),
-              blurRadius: 8,
-              offset: Offset(0, 4),
+              color: feature.gradient.colors.first.withOpacity(0.4),
+              blurRadius: 12,
+              offset: Offset(0, 6),
             ),
           ],
         ),
-        child: Column(
-          children: [
-            // Icon Section (Larger)
-            Expanded(
-              flex: 3,
-              child: Center(
-                child: Icon(
-                  feature.icon,
-                  size: 50,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            
-            // Content Section (Smaller)
-            Expanded(
-              flex: 2,
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Column(
+            children: [
+              // Video/Icon Section
+              Expanded(
+                flex: 3,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: feature.gradient,
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      feature.title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      feature.description,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.black54,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Spacer(),
-                    Container(
-                      width: double.infinity,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        gradient: feature.gradient,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Thử ngay',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                  child: Stack(
+                    children: [
+                      // Video Background (if available)
+                      if (controller != null && controller.value.isInitialized)
+                        Positioned.fill(
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: controller.value.size.width,
+                              height: controller.value.size.height,
+                              child: VideoPlayer(controller),
+                            ),
+                          ),
+                        ),
+                      
+                      // Gradient Overlay
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                feature.gradient.colors.first.withOpacity(0.3),
+                                feature.gradient.colors.last.withOpacity(0.6),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      
+                      // Icon (always visible)
+                      Center(
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Icon(
+                            feature.icon,
+                            size: 32,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+              
+              // Content Section
+              Expanded(
+                flex: 2,
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        feature.title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        feature.description,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Spacer(),
+                      Container(
+                        width: double.infinity,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          gradient: feature.gradient,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Thử ngay',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -326,6 +420,7 @@ class Feature {
   final IconData icon;
   final LinearGradient gradient;
   final String operation;
+  final String? videoPath;
 
   const Feature({
     required this.title,
@@ -333,5 +428,6 @@ class Feature {
     required this.icon,
     required this.gradient,
     required this.operation,
+    this.videoPath,
   });
 }
