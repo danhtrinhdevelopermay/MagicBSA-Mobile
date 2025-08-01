@@ -74,4 +74,6 @@ The mobile application is developed using Flutter 3.22.0 and Dart, employing the
   - Enhanced typography với 15px titles và 12px descriptions
   - Proper video controller management với memory leak prevention
   - **CRITICAL FIX**: Sửa callback scope issue trong video controller initialization để pass APK build
+  - **VIDEO PLAYBACK FIX**: Sửa tất cả video paths để match với file names thực tế, tất cả 8 tính năng AI bây giờ có video demos phát được
+  - Enhanced error handling với comprehensive debug logging cho video loading
   - Maintained navigation flow với preSelectedFeature parameter

@@ -24,7 +24,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'removeBackground',
-      videoPath: 'assets/videos/remove-backgroud_1754010253262.mp4',
+      videoPath: 'assets/videos/remove_background.mp4',
     ),
     Feature(
       title: 'Mở rộng ảnh',
@@ -36,7 +36,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'uncrop',
-      videoPath: 'assets/videos/expand-image_1754010253290.mp4',
+      videoPath: 'assets/videos/expand_image.mp4',
     ),
     Feature(
       title: 'Nâng cấp độ phân giải',
@@ -48,7 +48,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'imageUpscaling',
-      videoPath: 'assets/videos/Upscaling_1754010253319.mp4',
+      videoPath: 'assets/videos/upscaling.mp4',
     ),
     Feature(
       title: 'Xóa vật thể',
@@ -60,7 +60,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'cleanup',
-      videoPath: 'assets/videos/cleanup_1754010253223.mp4',
+      videoPath: 'assets/videos/cleanup.mp4',
     ),
     Feature(
       title: 'Xóa chữ khỏi ảnh',
@@ -72,7 +72,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'removeText',
-      videoPath: 'assets/videos/remove-text-demo_1754010271325.mp4',
+      videoPath: 'assets/videos/remove_text.mp4',
     ),
     Feature(
       title: 'Tái tạo ảnh AI',
@@ -84,7 +84,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'reimagine',
-      videoPath: 'assets/videos/reimagine_1754010271349.mp4',
+      videoPath: 'assets/videos/reimagine.mp4',
     ),
     Feature(
       title: 'Tạo ảnh từ văn bản',
@@ -96,7 +96,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'textToImage',
-      videoPath: 'assets/videos/text-to-image_1754010271269.mp4',
+      videoPath: 'assets/videos/text_to_image.mp4',
     ),
     Feature(
       title: 'Chụp ảnh sản phẩm',
@@ -108,7 +108,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'productPhotography',
-      videoPath: 'assets/videos/anh-san-pham_1754010271301.mp4',
+      videoPath: 'assets/videos/product_photography.mp4',
     ),
     Feature(
       title: 'Tạo video từ ảnh',
@@ -148,7 +148,12 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
             controller.setLooping(true);
             controller.play();
             controller.setVolume(0); // Mute videos
+            print('✅ Video loaded successfully: ${feature.videoPath}');
           }
+        }).catchError((error) {
+          print('❌ Error loading video ${feature.videoPath}: $error');
+          // Remove failed controller from map
+          _videoControllers.remove(feature.operation);
         });
       }
     }
@@ -297,12 +302,18 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
                       // Video Background (if available)
                       if (controller != null && controller.value.isInitialized)
                         Positioned.fill(
-                          child: FittedBox(
-                            fit: BoxFit.cover,
-                            child: SizedBox(
-                              width: controller.value.size.width,
-                              height: controller.value.size.height,
-                              child: VideoPlayer(controller),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(24),
+                              topRight: Radius.circular(24),
+                            ),
+                            child: FittedBox(
+                              fit: BoxFit.cover,
+                              child: SizedBox(
+                                width: controller.value.size.width,
+                                height: controller.value.size.height,
+                                child: VideoPlayer(controller),
+                              ),
                             ),
                           ),
                         ),
