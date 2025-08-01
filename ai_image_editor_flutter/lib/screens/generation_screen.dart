@@ -560,7 +560,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
                 onPressed: () => Navigator.pop(context),
               ),
               title: const Text(
-                'AnimateDiff Pro',
+                'Video Generator Pro',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

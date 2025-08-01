@@ -14,7 +14,7 @@ class AnimateDiffWidget extends StatefulWidget {
 }
 
 class _AnimateDiffWidgetState extends State<AnimateDiffWidget> {
-  final HuggingFaceAnimateDiffService _animateDiffService = HuggingFaceAnimateDiffService();
+  final ReplicateVideoService _videoService = ReplicateVideoService();
   final TextEditingController _promptController = TextEditingController();
   final TextEditingController _negativePromptController = TextEditingController();
   
@@ -42,7 +42,7 @@ class _AnimateDiffWidgetState extends State<AnimateDiffWidget> {
     _promptController.dispose();
     _negativePromptController.dispose();
     _videoController?.dispose();
-    _animateDiffService.dispose();
+    _videoService.dispose();
     super.dispose();
   }
 
@@ -88,7 +88,7 @@ class _AnimateDiffWidgetState extends State<AnimateDiffWidget> {
     });
 
     try {
-      final result = await _animateDiffService.generateVideoFromImage(
+      final result = await _videoService.generateVideoFromImage(
         imageFile: _selectedImage!,
         prompt: _promptController.text.trim(),
         negativePrompt: _negativePromptController.text.trim(),
@@ -222,7 +222,7 @@ class _AnimateDiffWidgetState extends State<AnimateDiffWidget> {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'AnimateDiff Pro',
+                    'Video Generator Pro',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -231,7 +231,7 @@ class _AnimateDiffWidgetState extends State<AnimateDiffWidget> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Biến ảnh thành video sống động với AI tiên tiến',
+                    'Biến ảnh thành video sống động với Stable Video Diffusion',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white70,
@@ -243,6 +243,62 @@ class _AnimateDiffWidgetState extends State<AnimateDiffWidget> {
             ),
             
             const SizedBox(height: 30),
+
+            // API Key Notice
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.orange,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Thông báo quan trọng',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Tính năng này cần API key từ Replicate.com để hoạt động. '
+                    'Vui lòng liên hệ để được cấp API key và sử dụng đầy đủ tính năng tạo video.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.9),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '• Cost: ~\$0.05-0.50 per video\n'
+                    '• Quality: Professional HD video\n'
+                    '• Speed: 2-5 minutes generation time',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.7),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 25),
 
             // Image Selection
             Container(
@@ -511,7 +567,7 @@ class _AnimateDiffWidgetState extends State<AnimateDiffWidget> {
                             ],
                           )
                         : const Text(
-                            'Tạo Video AnimateDiff',
+                            'Tạo Video từ Ảnh',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
