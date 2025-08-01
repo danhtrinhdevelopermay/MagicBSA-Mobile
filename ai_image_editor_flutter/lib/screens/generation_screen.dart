@@ -11,6 +11,7 @@ class GenerationScreen extends StatefulWidget {
 }
 
 class _GenerationScreenState extends State<GenerationScreen> with TickerProviderStateMixin {
+  Map<String, bool> _isPressed = {};
   
   final List<Feature> features = [
     Feature(
@@ -209,21 +210,26 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
                 ),
               ),
               
-              // Improved Grid
+              // Enhanced Grid with Staggered Animation
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   child: GridView.builder(
+                    physics: BouncingScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.85,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.78, // Slightly taller for better proportions
+                      crossAxisSpacing: 18,
+                      mainAxisSpacing: 20,
                     ),
                     itemCount: features.length,
                     itemBuilder: (context, index) {
                       final feature = features[index];
-                      return _buildGifFeatureCard(feature);
+                      return AnimatedContainer(
+                        duration: Duration(milliseconds: 300 + (index * 100)),
+                        curve: Curves.easeOutBack,
+                        child: _buildGifFeatureCard(feature),
+                      );
                     },
                   ),
                 ),
@@ -236,147 +242,302 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
   }
 
   Widget _buildGifFeatureCard(Feature feature) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        _navigateToUpload(feature.operation);
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: feature.gradient.colors.first.withOpacity(0.4),
-              blurRadius: 12,
-              offset: Offset(0, 6),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Column(
-            children: [
-              // GIF/Icon Section
-              Expanded(
-                flex: 3,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: feature.gradient,
-                  ),
-                  child: Stack(
-                    children: [
-                      // GIF Background (if available)
-                      if (feature.gifPath != null)
-                        Positioned.fill(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(24),
-                              topRight: Radius.circular(24),
-                            ),
-                            child: Image.asset(
-                              feature.gifPath!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                print('❌ Error loading GIF ${feature.gifPath}: $error');
-                                return Container(); // Return empty container if GIF fails to load
-                              },
-                            ),
-                          ),
-                        ),
-                      
-                      // Gradient Overlay (lighter so GIF is more visible)
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                feature.gradient.colors.first.withOpacity(0.1),
-                                feature.gradient.colors.last.withOpacity(0.3),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      // Icon (always visible)
-                      Center(
-                        child: Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Icon(
-                            feature.icon,
-                            size: 32,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+    final isPressed = _isPressed[feature.operation] ?? false;
+    
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 200),
+      transform: Matrix4.identity()
+        ..scale(isPressed ? 0.95 : 1.0),
+      child: GestureDetector(
+        onTapDown: (_) {
+          setState(() {
+            _isPressed[feature.operation] = true;
+          });
+        },
+        onTapUp: (_) {
+          setState(() {
+            _isPressed[feature.operation] = false;
+          });
+          HapticFeedback.lightImpact();
+          _navigateToUpload(feature.operation);
+        },
+        onTapCancel: () {
+          setState(() {
+            _isPressed[feature.operation] = false;
+          });
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              // Multiple shadow layers for depth
+              BoxShadow(
+                color: feature.gradient.colors.first.withOpacity(0.3),
+                blurRadius: 20,
+                offset: Offset(0, 10),
+                spreadRadius: -5,
               ),
-              
-              // Content Section
-              Expanded(
-                flex: 2,
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        feature.title,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        feature.description,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.black54,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Spacer(),
-                      Container(
-                        width: double.infinity,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          gradient: feature.gradient,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Thử ngay',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 15,
+                offset: Offset(0, 5),
+                spreadRadius: -8,
               ),
             ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Container(
+              decoration: BoxDecoration(
+                // Glassmorphism background
+                color: Colors.white.withOpacity(0.1),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Enhanced GIF/Icon Section
+                  Expanded(
+                    flex: 4,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            feature.gradient.colors.first,
+                            feature.gradient.colors.last,
+                            feature.gradient.colors.first.withOpacity(0.8),
+                          ],
+                          stops: [0.0, 0.7, 1.0],
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          // GIF Background with better handling
+                          if (feature.gifPath != null)
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(28),
+                                  topRight: Radius.circular(28),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    Image.asset(
+                                      feature.gifPath!,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            gradient: feature.gradient,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    // Subtle overlay for better text readability
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.black.withOpacity(0.1),
+                                            Colors.black.withOpacity(0.3),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          
+                          // Floating AI Badge
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.9),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'AI',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          
+                          // Enhanced Icon with glassmorphism
+                          Center(
+                            child: Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 20,
+                                    offset: Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                feature.icon,
+                                size: 36,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // Enhanced Content Section
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(28),
+                          bottomRight: Radius.circular(28),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title with improved typography
+                          Text(
+                            feature.title,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                              height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 8),
+                          
+                          // Description with better styling
+                          Text(
+                            feature.description,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                              height: 1.3,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          
+                          Spacer(),
+                          
+                          // Enhanced CTA Button
+                          Container(
+                            width: double.infinity,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  feature.gradient.colors.first,
+                                  feature.gradient.colors.last,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: feature.gradient.colors.first.withOpacity(0.4),
+                                  blurRadius: 12,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: () {
+                                  HapticFeedback.mediumImpact();
+                                  _navigateToUpload(feature.operation);
+                                },
+                                child: Center(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Thử ngay',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      SizedBox(width: 6),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
