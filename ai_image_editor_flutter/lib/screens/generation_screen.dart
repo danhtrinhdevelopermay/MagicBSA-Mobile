@@ -128,6 +128,31 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
   void initState() {
     super.initState();
     _initializeVideoControllers();
+    
+    // Start a periodic check to ensure videos are playing
+    _startVideoPlaybackMonitor();
+  }
+  
+  void _startVideoPlaybackMonitor() {
+    // Check video playback every 3 seconds
+    Future.delayed(Duration(seconds: 3), () {
+      if (mounted) {
+        _ensureAllVideosPlaying();
+        _startVideoPlaybackMonitor(); // Recursive call
+      }
+    });
+  }
+  
+  void _ensureAllVideosPlaying() {
+    for (var entry in _videoControllers.entries) {
+      final controller = entry.value;
+      if (controller != null && 
+          controller.value.isInitialized && 
+          !controller.value.isPlaying) {
+        controller.play();
+        print('🔄 Restarted video playback for: ${entry.key}');
+      }
+    }
   }
   
   @override
@@ -136,26 +161,83 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
     super.dispose();
   }
   
-  void _initializeVideoControllers() {
+  void _initializeVideoControllers() async {
     for (var feature in features) {
       if (feature.videoPath != null) {
-        final controller = VideoPlayerController.asset(feature.videoPath!);
-        _videoControllers[feature.operation] = controller;
-        
-        controller.initialize().then((_) {
+        try {
+          final controller = VideoPlayerController.asset(feature.videoPath!);
+          _videoControllers[feature.operation] = controller;
+          
+          // Initialize controller with better error handling
+          await controller.initialize();
+          
           if (mounted) {
-            setState(() {});
+            // Configure video playback
             controller.setLooping(true);
-            controller.play();
             controller.setVolume(0); // Mute videos
-            print('✅ Video loaded successfully: ${feature.videoPath}');
+            
+            // Start playing immediately after initialization
+            await controller.play();
+            
+            // Update UI to show the video
+            setState(() {});
+            
+            print('✅ Video initialized and playing: ${feature.videoPath}');
           }
-        }).catchError((error) {
+        } catch (error) {
           print('❌ Error loading video ${feature.videoPath}: $error');
           // Remove failed controller from map
           _videoControllers.remove(feature.operation);
-        });
+          
+          // Try alternative video path if available
+          if (feature.operation == 'removeBackground' && 
+              _videoControllers[feature.operation] == null) {
+            _tryAlternativeVideo(feature.operation, 'assets/videos/remove-backgroud_1754010253262.mp4');
+          } else if (feature.operation == 'uncrop' && 
+                     _videoControllers[feature.operation] == null) {
+            _tryAlternativeVideo(feature.operation, 'assets/videos/expand-image_1754010253290.mp4');
+          } else if (feature.operation == 'imageUpscaling' && 
+                     _videoControllers[feature.operation] == null) {
+            _tryAlternativeVideo(feature.operation, 'assets/videos/Upscaling_1754010253319.mp4');
+          } else if (feature.operation == 'cleanup' && 
+                     _videoControllers[feature.operation] == null) {
+            _tryAlternativeVideo(feature.operation, 'assets/videos/cleanup_1754010253223.mp4');
+          } else if (feature.operation == 'removeText' && 
+                     _videoControllers[feature.operation] == null) {
+            _tryAlternativeVideo(feature.operation, 'assets/videos/remove-text-demo_1754010271325.mp4');
+          } else if (feature.operation == 'reimagine' && 
+                     _videoControllers[feature.operation] == null) {
+            _tryAlternativeVideo(feature.operation, 'assets/videos/reimagine_1754010271349.mp4');
+          } else if (feature.operation == 'textToImage' && 
+                     _videoControllers[feature.operation] == null) {
+            _tryAlternativeVideo(feature.operation, 'assets/videos/text-to-image_1754010271269.mp4');
+          } else if (feature.operation == 'productPhotography' && 
+                     _videoControllers[feature.operation] == null) {
+            _tryAlternativeVideo(feature.operation, 'assets/videos/anh-san-pham_1754010271301.mp4');
+          }
+        }
       }
+    }
+  }
+  
+  void _tryAlternativeVideo(String operation, String alternativePath) async {
+    try {
+      print('🔄 Trying alternative video for $operation: $alternativePath');
+      final controller = VideoPlayerController.asset(alternativePath);
+      _videoControllers[operation] = controller;
+      
+      await controller.initialize();
+      
+      if (mounted) {
+        controller.setLooping(true);
+        controller.setVolume(0);
+        await controller.play();
+        setState(() {});
+        print('✅ Alternative video loaded successfully: $alternativePath');
+      }
+    } catch (error) {
+      print('❌ Alternative video also failed for $operation: $error');
+      _videoControllers.remove(operation);
     }
   }
   
@@ -268,6 +350,12 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
 
   Widget _buildVideoFeatureCard(Feature feature) {
     final controller = _videoControllers[feature.operation];
+    final bool hasVideo = controller != null && controller.value.isInitialized;
+    
+    // Debug info
+    if (feature.videoPath != null) {
+      print('🎥 Feature ${feature.operation}: Video ${hasVideo ? "loaded" : "not loaded"} - ${feature.videoPath}');
+    }
     
     return GestureDetector(
       onTap: () {
@@ -307,18 +395,14 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
                               topLeft: Radius.circular(24),
                               topRight: Radius.circular(24),
                             ),
-                            child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: controller.value.size.width,
-                                height: controller.value.size.height,
-                                child: VideoPlayer(controller),
-                              ),
+                            child: AspectRatio(
+                              aspectRatio: controller.value.aspectRatio,
+                              child: VideoPlayer(controller),
                             ),
                           ),
                         ),
                       
-                      // Gradient Overlay
+                      // Gradient Overlay (lighter so video is more visible)
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(
@@ -326,8 +410,8 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                feature.gradient.colors.first.withOpacity(0.3),
-                                feature.gradient.colors.last.withOpacity(0.6),
+                                feature.gradient.colors.first.withOpacity(0.1),
+                                feature.gradient.colors.last.withOpacity(0.3),
                               ],
                             ),
                           ),
