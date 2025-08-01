@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
@@ -12,6 +13,7 @@ class GenerationScreen extends StatefulWidget {
 
 class _GenerationScreenState extends State<GenerationScreen> with TickerProviderStateMixin {
   Map<String, VideoPlayerController?> _videoControllers = {};
+  Map<String, Timer?> _videoTimers = {};
   
   final List<Feature> features = [
     Feature(
@@ -128,94 +130,145 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
   void initState() {
     super.initState();
     _initializeVideoControllers();
-    
-    // Start a periodic check to ensure videos are playing
-    _startVideoPlaybackMonitor();
-  }
-  
-  void _startVideoPlaybackMonitor() {
-    // Check video playback every 3 seconds
-    Future.delayed(Duration(seconds: 3), () {
-      if (mounted) {
-        _ensureAllVideosPlaying();
-        _startVideoPlaybackMonitor(); // Recursive call
-      }
-    });
-  }
-  
-  void _ensureAllVideosPlaying() {
-    for (var entry in _videoControllers.entries) {
-      final controller = entry.value;
-      if (controller != null && 
-          controller.value.isInitialized && 
-          !controller.value.isPlaying) {
-        controller.play();
-        print('🔄 Restarted video playback for: ${entry.key}');
-      }
-    }
   }
   
   @override
   void dispose() {
     _disposeVideoControllers();
+    _disposeVideoTimers();
     super.dispose();
   }
   
-  void _initializeVideoControllers() async {
+  void _initializeVideoControllers() {
+    // Initialize videos with staggered timing to avoid resource conflicts
+    int delayIndex = 0;
+    
     for (var feature in features) {
       if (feature.videoPath != null) {
-        try {
-          final controller = VideoPlayerController.asset(feature.videoPath!);
-          _videoControllers[feature.operation] = controller;
+        // Stagger initialization by 200ms for each video
+        Future.delayed(Duration(milliseconds: delayIndex * 200), () {
+          _initializeSingleVideo(feature);
+        });
+        delayIndex++;
+      }
+    }
+  }
+  
+  void _initializeSingleVideo(Feature feature) async {
+    try {
+      final controller = VideoPlayerController.asset(feature.videoPath!);
+      _videoControllers[feature.operation] = controller;
+      
+      // Initialize and configure the controller
+      await controller.initialize();
+      
+      if (mounted) {
+        // Set video properties
+        controller.setLooping(true);
+        controller.setVolume(0); // Mute videos
+        
+        // Start playing with a small delay to ensure proper initialization
+        await Future.delayed(Duration(milliseconds: 100));
+        await controller.play();
+        
+        // Start individual monitoring for this video
+        _startIndividualVideoMonitoring(feature.operation, controller);
+        
+        // Update UI
+        if (mounted) {
+          setState(() {});
+        }
+        
+        print('✅ Video initialized and playing: ${feature.videoPath}');
+      }
+    } catch (error) {
+      print('❌ Error loading video ${feature.videoPath}: $error');
+      _videoControllers.remove(feature.operation);
+      
+      // Try alternative video path if available
+      _tryAlternativeVideo(feature);
+    }
+  }
+  
+  void _startIndividualVideoMonitoring(String operation, VideoPlayerController controller) {
+    // Cancel existing timer if any
+    _videoTimers[operation]?.cancel();
+    
+    // Create a periodic timer for this specific video
+    _videoTimers[operation] = Timer.periodic(Duration(seconds: 3), (timer) {
+      if (!mounted || !controller.value.isInitialized) {
+        timer.cancel();
+        _videoTimers.remove(operation);
+        return;
+      }
+      
+      // Check if video is playing, if not, restart it
+      if (!controller.value.isPlaying) {
+        controller.play().then((_) {
+          print('🔄 Individual restart for video: $operation');
+        }).catchError((error) {
+          print('❌ Failed to restart video $operation: $error');
+        });
+      }
+    });
+  }
+  
+  void _tryAlternativeVideo(Feature feature) async {
+    String? alternativePath;
+    
+    switch (feature.operation) {
+      case 'removeBackground':
+        alternativePath = 'assets/videos/remove-backgroud_1754010253262.mp4';
+        break;
+      case 'uncrop':
+        alternativePath = 'assets/videos/expand-image_1754010253290.mp4';
+        break;
+      case 'imageUpscaling':
+        alternativePath = 'assets/videos/Upscaling_1754010253319.mp4';
+        break;
+      case 'cleanup':
+        alternativePath = 'assets/videos/cleanup_1754010253223.mp4';
+        break;
+      case 'removeText':
+        alternativePath = 'assets/videos/remove-text-demo_1754010271325.mp4';
+        break;
+      case 'reimagine':
+        alternativePath = 'assets/videos/reimagine_1754010271349.mp4';
+        break;
+      case 'textToImage':
+        alternativePath = 'assets/videos/text-to-image_1754010271269.mp4';
+        break;
+      case 'productPhotography':
+        alternativePath = 'assets/videos/anh-san-pham_1754010271301.mp4';
+        break;
+    }
+    
+    if (alternativePath != null) {
+      try {
+        print('🔄 Trying alternative video for ${feature.operation}: $alternativePath');
+        final controller = VideoPlayerController.asset(alternativePath);
+        _videoControllers[feature.operation] = controller;
+        
+        await controller.initialize();
+        
+        if (mounted) {
+          controller.setLooping(true);
+          controller.setVolume(0);
           
-          // Initialize controller with better error handling
-          await controller.initialize();
+          await Future.delayed(Duration(milliseconds: 100));
+          await controller.play();
+          
+          // Start individual monitoring for this alternative video
+          _startIndividualVideoMonitoring(feature.operation, controller);
           
           if (mounted) {
-            // Configure video playback
-            controller.setLooping(true);
-            controller.setVolume(0); // Mute videos
-            
-            // Start playing immediately after initialization
-            await controller.play();
-            
-            // Update UI to show the video
             setState(() {});
-            
-            print('✅ Video initialized and playing: ${feature.videoPath}');
           }
-        } catch (error) {
-          print('❌ Error loading video ${feature.videoPath}: $error');
-          // Remove failed controller from map
-          _videoControllers.remove(feature.operation);
-          
-          // Try alternative video path if available
-          if (feature.operation == 'removeBackground' && 
-              _videoControllers[feature.operation] == null) {
-            _tryAlternativeVideo(feature.operation, 'assets/videos/remove-backgroud_1754010253262.mp4');
-          } else if (feature.operation == 'uncrop' && 
-                     _videoControllers[feature.operation] == null) {
-            _tryAlternativeVideo(feature.operation, 'assets/videos/expand-image_1754010253290.mp4');
-          } else if (feature.operation == 'imageUpscaling' && 
-                     _videoControllers[feature.operation] == null) {
-            _tryAlternativeVideo(feature.operation, 'assets/videos/Upscaling_1754010253319.mp4');
-          } else if (feature.operation == 'cleanup' && 
-                     _videoControllers[feature.operation] == null) {
-            _tryAlternativeVideo(feature.operation, 'assets/videos/cleanup_1754010253223.mp4');
-          } else if (feature.operation == 'removeText' && 
-                     _videoControllers[feature.operation] == null) {
-            _tryAlternativeVideo(feature.operation, 'assets/videos/remove-text-demo_1754010271325.mp4');
-          } else if (feature.operation == 'reimagine' && 
-                     _videoControllers[feature.operation] == null) {
-            _tryAlternativeVideo(feature.operation, 'assets/videos/reimagine_1754010271349.mp4');
-          } else if (feature.operation == 'textToImage' && 
-                     _videoControllers[feature.operation] == null) {
-            _tryAlternativeVideo(feature.operation, 'assets/videos/text-to-image_1754010271269.mp4');
-          } else if (feature.operation == 'productPhotography' && 
-                     _videoControllers[feature.operation] == null) {
-            _tryAlternativeVideo(feature.operation, 'assets/videos/anh-san-pham_1754010271301.mp4');
-          }
+          print('✅ Alternative video loaded successfully: $alternativePath');
         }
+      } catch (error) {
+        print('❌ Alternative video also failed for ${feature.operation}: $error');
+        _videoControllers.remove(feature.operation);
       }
     }
   }
@@ -246,6 +299,13 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
       controller?.dispose();
     }
     _videoControllers.clear();
+  }
+  
+  void _disposeVideoTimers() {
+    for (var timer in _videoTimers.values) {
+      timer?.cancel();
+    }
+    _videoTimers.clear();
   }
 
   @override
