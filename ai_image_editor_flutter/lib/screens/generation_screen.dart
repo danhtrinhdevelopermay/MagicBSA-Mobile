@@ -273,27 +273,6 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
     }
   }
   
-  void _tryAlternativeVideo(String operation, String alternativePath) async {
-    try {
-      print('🔄 Trying alternative video for $operation: $alternativePath');
-      final controller = VideoPlayerController.asset(alternativePath);
-      _videoControllers[operation] = controller;
-      
-      await controller.initialize();
-      
-      if (mounted) {
-        controller.setLooping(true);
-        controller.setVolume(0);
-        await controller.play();
-        setState(() {});
-        print('✅ Alternative video loaded successfully: $alternativePath');
-      }
-    } catch (error) {
-      print('❌ Alternative video also failed for $operation: $error');
-      _videoControllers.remove(operation);
-    }
-  }
-  
   void _disposeVideoControllers() {
     for (var controller in _videoControllers.values) {
       controller?.dispose();
