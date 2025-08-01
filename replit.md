@@ -112,14 +112,11 @@ The mobile application is developed using Flutter 3.22.0 and Dart, employing the
   - **Improved grid layout**: BouncingScrollPhysics với optimized spacing (18px/20px)
   - **Better aspect ratio**: 0.78 cho taller cards với improved proportions
 
-✓ **VIDEO GENERATOR PRO INTEGRATION COMPLETE** - Fixed API error và migrated to Replicate:
-  - **FIXED API ERROR**: Resolved "Không thể tạo video" by migrating from Hugging Face to Replicate API
-  - **Replicate API Integration**: Using Stable Video Diffusion model với proper async polling
-  - **Professional UI**: Glassmorphism design với API key notice và cost transparency
-  - **Clear User Guidance**: Orange warning box explaining API key requirement và costs ($0.05-0.50/video)
-  - **Proper Error Handling**: Vietnamese messages với actionable guidance for API setup
-  - **Video Preview**: Built-in player với playback controls cho when API key is configured
-  - **Generation Screen Integration**: Updated titles và navigation ("Video Generator Pro")
-  - **APK Build Compatible**: No breaking changes, standard HTTP requests với dio
-  - **Resource Management**: Proper disposal patterns và error boundaries
-  - **Status**: Ready for API key setup by user to enable video generation
+✓ **VIDEO GENERATOR PRO FEATURE REMOVED** - Xóa hoàn toàn tính năng Replicate-based video generation:
+  - **REMOVED FILES**: Deleted huggingface_animatediff_service.dart, animatediff_widget.dart, and documentation
+  - **CLEANED GENERATION SCREEN**: Removed "Tạo video từ ảnh Pro" feature card from generation grid
+  - **SIMPLIFIED NAVIGATION**: All features now use standard ImageUploadWidget flow
+  - **REMOVED DEPENDENCIES**: No more Replicate API calls or video generation complexity
+  - **APK BUILD OPTIMIZED**: Reduced app size by removing unused video generation components
+  - **USER EXPERIENCE**: Streamlined to focus on core AI image editing features only
+  - **STATUS**: Video generation feature completely removed per user request
