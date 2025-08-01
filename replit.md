@@ -73,4 +73,5 @@ The mobile application is developed using Flutter 3.22.0 and Dart, employing the
   - Modern card styling với 24px border radius và professional shadows
   - Enhanced typography với 15px titles và 12px descriptions
   - Proper video controller management với memory leak prevention
-  - Maintained navigation flow với preSelectedFeature parameter full functionality while fixing video playback issues
+  - **CRITICAL FIX**: Sửa callback scope issue trong video controller initialization để pass APK build
+  - Maintained navigation flow với preSelectedFeature parameter

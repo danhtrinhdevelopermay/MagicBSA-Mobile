@@ -139,16 +139,17 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
   void _initializeVideoControllers() {
     for (var feature in features) {
       if (feature.videoPath != null) {
-        final controller = VideoPlayerController.asset(feature.videoPath!)
-          ..initialize().then((_) {
-            if (mounted) {
-              setState(() {});
-              controller.setLooping(true);
-              controller.play();
-              controller.setVolume(0); // Mute videos
-            }
-          });
+        final controller = VideoPlayerController.asset(feature.videoPath!);
         _videoControllers[feature.operation] = controller;
+        
+        controller.initialize().then((_) {
+          if (mounted) {
+            setState(() {});
+            controller.setLooping(true);
+            controller.play();
+            controller.setVolume(0); // Mute videos
+          }
+        });
       }
     }
   }
