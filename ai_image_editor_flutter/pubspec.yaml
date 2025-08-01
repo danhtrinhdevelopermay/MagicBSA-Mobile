@@ -71,7 +71,7 @@ dependencies:
   # Phosphor Icons for modern icon design
   phosphor_flutter: ^2.1.0
   
-  # Video player for feature demonstrations
+  # Video player for feature demonstrations (keeping for backward compatibility)
   video_player: ^2.8.2
 
 dev_dependencies:
@@ -103,6 +103,7 @@ flutter:
     - assets/icons/navigation/
     - assets/icons/
     - assets/videos/
+    - assets/gifs/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

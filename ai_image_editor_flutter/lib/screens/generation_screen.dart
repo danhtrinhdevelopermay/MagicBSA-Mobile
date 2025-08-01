@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:video_player/video_player.dart';
 import '../widgets/image_upload_widget.dart';
 
 class GenerationScreen extends StatefulWidget {
@@ -12,8 +11,6 @@ class GenerationScreen extends StatefulWidget {
 }
 
 class _GenerationScreenState extends State<GenerationScreen> with TickerProviderStateMixin {
-  Map<String, VideoPlayerController?> _videoControllers = {};
-  Map<String, Timer?> _videoTimers = {};
   
   final List<Feature> features = [
     Feature(
@@ -26,7 +23,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'removeBackground',
-      videoPath: 'assets/videos/remove_background.mp4',
+      gifPath: 'assets/gifs/remove-background.gif',
     ),
     Feature(
       title: 'Mở rộng ảnh',
@@ -38,7 +35,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'uncrop',
-      videoPath: 'assets/videos/expand_image.mp4',
+      gifPath: 'assets/gifs/expand-image.gif',
     ),
     Feature(
       title: 'Nâng cấp độ phân giải',
@@ -50,7 +47,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'imageUpscaling',
-      videoPath: 'assets/videos/upscaling.mp4',
+      gifPath: 'assets/gifs/upscaling.gif',
     ),
     Feature(
       title: 'Xóa vật thể',
@@ -62,7 +59,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'cleanup',
-      videoPath: 'assets/videos/cleanup.mp4',
+      gifPath: 'assets/gifs/cleanup.gif',
     ),
     Feature(
       title: 'Xóa chữ khỏi ảnh',
@@ -74,7 +71,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'removeText',
-      videoPath: 'assets/videos/remove_text.mp4',
+      gifPath: 'assets/gifs/remove-text.gif',
     ),
     Feature(
       title: 'Tái tạo ảnh AI',
@@ -86,7 +83,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'reimagine',
-      videoPath: 'assets/videos/reimagine.mp4',
+      gifPath: 'assets/gifs/reimagine.gif',
     ),
     Feature(
       title: 'Tạo ảnh từ văn bản',
@@ -98,7 +95,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'textToImage',
-      videoPath: 'assets/videos/text_to_image.mp4',
+      gifPath: 'assets/gifs/text-to-image.gif',
     ),
     Feature(
       title: 'Chụp ảnh sản phẩm',
@@ -110,7 +107,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'productPhotography',
-      videoPath: 'assets/videos/product_photography.mp4',
+      gifPath: 'assets/gifs/product-photography.gif',
     ),
     Feature(
       title: 'Tạo video từ ảnh',
@@ -122,169 +119,20 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
         end: Alignment.bottomRight,
       ),
       operation: 'imageToVideo',
-      videoPath: null, // No demo video for this feature
+      gifPath: null, // No demo GIF for this feature
     ),
   ];
 
   @override
   void initState() {
     super.initState();
-    _initializeVideoControllers();
+    // GIF system doesn't need initialization like videos
   }
   
   @override
   void dispose() {
-    _disposeVideoControllers();
-    _disposeVideoTimers();
+    // GIF system doesn't need disposal like videos
     super.dispose();
-  }
-  
-  void _initializeVideoControllers() {
-    // Initialize videos with staggered timing to avoid resource conflicts
-    int delayIndex = 0;
-    
-    for (var feature in features) {
-      if (feature.videoPath != null) {
-        // Stagger initialization by 200ms for each video
-        Future.delayed(Duration(milliseconds: delayIndex * 200), () {
-          _initializeSingleVideo(feature);
-        });
-        delayIndex++;
-      }
-    }
-  }
-  
-  void _initializeSingleVideo(Feature feature) async {
-    try {
-      final controller = VideoPlayerController.asset(feature.videoPath!);
-      _videoControllers[feature.operation] = controller;
-      
-      // Initialize and configure the controller
-      await controller.initialize();
-      
-      if (mounted) {
-        // Set video properties
-        controller.setLooping(true);
-        controller.setVolume(0); // Mute videos
-        
-        // Start playing with a small delay to ensure proper initialization
-        await Future.delayed(Duration(milliseconds: 100));
-        await controller.play();
-        
-        // Start individual monitoring for this video
-        _startIndividualVideoMonitoring(feature.operation, controller);
-        
-        // Update UI
-        if (mounted) {
-          setState(() {});
-        }
-        
-        print('✅ Video initialized and playing: ${feature.videoPath}');
-      }
-    } catch (error) {
-      print('❌ Error loading video ${feature.videoPath}: $error');
-      _videoControllers.remove(feature.operation);
-      
-      // Try alternative video path if available
-      _tryAlternativeVideo(feature);
-    }
-  }
-  
-  void _startIndividualVideoMonitoring(String operation, VideoPlayerController controller) {
-    // Cancel existing timer if any
-    _videoTimers[operation]?.cancel();
-    
-    // Create a periodic timer for this specific video
-    _videoTimers[operation] = Timer.periodic(Duration(seconds: 3), (timer) {
-      if (!mounted || !controller.value.isInitialized) {
-        timer.cancel();
-        _videoTimers.remove(operation);
-        return;
-      }
-      
-      // Check if video is playing, if not, restart it
-      if (!controller.value.isPlaying) {
-        controller.play().then((_) {
-          print('🔄 Individual restart for video: $operation');
-        }).catchError((error) {
-          print('❌ Failed to restart video $operation: $error');
-        });
-      }
-    });
-  }
-  
-  void _tryAlternativeVideo(Feature feature) async {
-    String? alternativePath;
-    
-    switch (feature.operation) {
-      case 'removeBackground':
-        alternativePath = 'assets/videos/remove-backgroud_1754010253262.mp4';
-        break;
-      case 'uncrop':
-        alternativePath = 'assets/videos/expand-image_1754010253290.mp4';
-        break;
-      case 'imageUpscaling':
-        alternativePath = 'assets/videos/Upscaling_1754010253319.mp4';
-        break;
-      case 'cleanup':
-        alternativePath = 'assets/videos/cleanup_1754010253223.mp4';
-        break;
-      case 'removeText':
-        alternativePath = 'assets/videos/remove-text-demo_1754010271325.mp4';
-        break;
-      case 'reimagine':
-        alternativePath = 'assets/videos/reimagine_1754010271349.mp4';
-        break;
-      case 'textToImage':
-        alternativePath = 'assets/videos/text-to-image_1754010271269.mp4';
-        break;
-      case 'productPhotography':
-        alternativePath = 'assets/videos/anh-san-pham_1754010271301.mp4';
-        break;
-    }
-    
-    if (alternativePath != null) {
-      try {
-        print('🔄 Trying alternative video for ${feature.operation}: $alternativePath');
-        final controller = VideoPlayerController.asset(alternativePath);
-        _videoControllers[feature.operation] = controller;
-        
-        await controller.initialize();
-        
-        if (mounted) {
-          controller.setLooping(true);
-          controller.setVolume(0);
-          
-          await Future.delayed(Duration(milliseconds: 100));
-          await controller.play();
-          
-          // Start individual monitoring for this alternative video
-          _startIndividualVideoMonitoring(feature.operation, controller);
-          
-          if (mounted) {
-            setState(() {});
-          }
-          print('✅ Alternative video loaded successfully: $alternativePath');
-        }
-      } catch (error) {
-        print('❌ Alternative video also failed for ${feature.operation}: $error');
-        _videoControllers.remove(feature.operation);
-      }
-    }
-  }
-  
-  void _disposeVideoControllers() {
-    for (var controller in _videoControllers.values) {
-      controller?.dispose();
-    }
-    _videoControllers.clear();
-  }
-  
-  void _disposeVideoTimers() {
-    for (var timer in _videoTimers.values) {
-      timer?.cancel();
-    }
-    _videoTimers.clear();
   }
 
   @override
@@ -375,7 +223,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
                     itemCount: features.length,
                     itemBuilder: (context, index) {
                       final feature = features[index];
-                      return _buildVideoFeatureCard(feature);
+                      return _buildGifFeatureCard(feature);
                     },
                   ),
                 ),
@@ -387,15 +235,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
     );
   }
 
-  Widget _buildVideoFeatureCard(Feature feature) {
-    final controller = _videoControllers[feature.operation];
-    final bool hasVideo = controller != null && controller.value.isInitialized;
-    
-    // Debug info
-    if (feature.videoPath != null) {
-      print('🎥 Feature ${feature.operation}: Video ${hasVideo ? "loaded" : "not loaded"} - ${feature.videoPath}');
-    }
-    
+  Widget _buildGifFeatureCard(Feature feature) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -416,7 +256,7 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
           borderRadius: BorderRadius.circular(24),
           child: Column(
             children: [
-              // Video/Icon Section
+              // GIF/Icon Section
               Expanded(
                 flex: 3,
                 child: Container(
@@ -426,22 +266,26 @@ class _GenerationScreenState extends State<GenerationScreen> with TickerProvider
                   ),
                   child: Stack(
                     children: [
-                      // Video Background (if available)
-                      if (controller != null && controller.value.isInitialized)
+                      // GIF Background (if available)
+                      if (feature.gifPath != null)
                         Positioned.fill(
                           child: ClipRRect(
                             borderRadius: BorderRadius.only(
                               topLeft: Radius.circular(24),
                               topRight: Radius.circular(24),
                             ),
-                            child: AspectRatio(
-                              aspectRatio: controller.value.aspectRatio,
-                              child: VideoPlayer(controller),
+                            child: Image.asset(
+                              feature.gifPath!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                print('❌ Error loading GIF ${feature.gifPath}: $error');
+                                return Container(); // Return empty container if GIF fails to load
+                              },
                             ),
                           ),
                         ),
                       
-                      // Gradient Overlay (lighter so video is more visible)
+                      // Gradient Overlay (lighter so GIF is more visible)
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(
@@ -556,7 +400,7 @@ class Feature {
   final IconData icon;
   final LinearGradient gradient;
   final String operation;
-  final String? videoPath;
+  final String? gifPath;
 
   const Feature({
     required this.title,
@@ -564,6 +408,6 @@ class Feature {
     required this.icon,
     required this.gradient,
     required this.operation,
-    this.videoPath,
+    this.gifPath,
   });
 }
