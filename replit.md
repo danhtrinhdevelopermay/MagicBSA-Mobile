@@ -39,7 +39,7 @@ The mobile application is developed using Flutter 3.22.0 and Dart, employing the
 
 ### Flutter Mobile Application
 - **Clipdrop API**: Integrated for all AI image processing functionalities.
-- **Segmind API**: New integration for AI image-to-video generation using Kling AI model.
+- **Segmind API**: Advanced integration for AI image-to-video generation using LTX Video model (24fps real-time).
 - **Firebase**: For OneSignal push notification integration.
 - **OneSignal**: Push notification service.
 - **audioplayers**: For background music and sound effects.
@@ -52,16 +52,17 @@ The mobile application is developed using Flutter 3.22.0 and Dart, employing the
 
 ## Recent Changes (August 1, 2025)
 
-✓ **NEW FEATURE: AI IMAGE-TO-VIDEO GENERATION** - Tích hợp Segmind API để tạo video từ ảnh:
-  - Added SegmindApiService with Kling AI image-to-video integration
-  - Created ImageToVideoWidget với comprehensive UI controls
-  - Added VideoPlayerWidget với real video playback functionality  
-  - Integrated với generation screen as 9th feature card
-  - Support Pro/Standard modes, 5s/10s duration, configurable CFG scale
-  - Full video controls: play/pause, save to gallery, share functionality
-  - Progress tracking during video generation process
-  - Error handling với meaningful Vietnamese error messages
-  - Navigation logic updated to route imageToVideo operation correctly
+✓ **UPGRADED: LTX VIDEO API FOR IMAGE-TO-VIDEO GENERATION** - Major upgrade to cutting-edge LTX Video model:
+  - Migrated from Kling AI to LTX Video model (24fps real-time generation)
+  - Updated SegmindApiService to use ltx-video endpoint with multipart/form-data
+  - Enhanced ImageToVideoWidget with frame-based duration control (97-257 frames)
+  - Advanced CFG scale 1-20 with optimal recommendations (3.0-3.5)
+  - Professional UI with LTX Video branding and technical specifications
+  - Support for multiple aspect ratios and target sizes (512-1024px)
+  - Improved prompt guidance for cinematic quality results
+  - Standard (30 steps) vs Pro (40+ steps) modes for speed/quality balance
+  - Real-time video generation faster than viewing time (768x512 resolution)
+  - Enhanced error handling with detailed Vietnamese messages
 
 ✓ **SIMPLIFIED GENERATION SCREEN UI** - Đơn giản hóa giao diện trang chọn tính năng và khắc phục video không phát:
   - Removed complex video preload system causing loading issues và build complications

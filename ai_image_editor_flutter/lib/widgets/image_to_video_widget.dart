@@ -20,9 +20,9 @@ class _ImageToVideoWidgetState extends State<ImageToVideoWidget>
   final TextEditingController _promptController = TextEditingController();
   final TextEditingController _negativePromptController = TextEditingController();
   
-  String _selectedMode = 'pro';
-  int _selectedDuration = 5;
-  double _cfgScale = 0.5;
+  String _selectedMode = 'standard';
+  int _selectedDuration = 97; // Default to 97 frames (~4s)
+  double _cfgScale = 3.0; // LTX Video default CFG scale
   
   bool _isGenerating = false;
   double _progress = 0.0;
@@ -48,9 +48,9 @@ class _ImageToVideoWidgetState extends State<ImageToVideoWidget>
       curve: Curves.easeInOut,
     ));
     
-    // Default prompts
-    _promptController.text = 'Gentle camera movement, smooth animation, cinematic lighting';
-    _negativePromptController.text = 'No sudden movements, no fast zooms, no abrupt changes';
+    // Default prompts optimized for LTX Video
+    _promptController.text = 'Smooth camera movement with cinematic lighting, gentle transitions, realistic motion, high quality video with natural flow and elegant cinematography';
+    _negativePromptController.text = 'low quality, worst quality, deformed, distorted, blurry, pixelated, artifacts';
   }
 
   @override
@@ -182,14 +182,26 @@ class _ImageToVideoWidgetState extends State<ImageToVideoWidget>
                       icon: Icon(Icons.arrow_back, color: Colors.white, size: 28),
                     ),
                     Expanded(
-                      child: Text(
-                        'Tạo video từ ảnh',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        children: [
+                          Text(
+                            'Tạo video từ ảnh',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            'Powered by LTX Video - 24fps Real-time Generation',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withOpacity(0.8),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(width: 48), // Balance the back button
@@ -365,14 +377,15 @@ class _ImageToVideoWidgetState extends State<ImageToVideoWidget>
           ),
           SizedBox(height: 16),
           
-          // Duration Selection
-          Text('Thời lượng:', style: TextStyle(color: Colors.white, fontSize: 16)),
+          // Duration Selection  
+          Text('Thời lượng video:', style: TextStyle(color: Colors.white, fontSize: 16)),
           SizedBox(height: 8),
-          Row(
-            children: SegmindApiService.getAvailableDurations().map((duration) {
-              return Expanded(
-                child: Container(
-                  margin: EdgeInsets.only(right: duration != 10 ? 8 : 0),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: SegmindApiService.getAvailableDurations().map((duration) {
+                return Container(
+                  margin: EdgeInsets.only(right: 8),
                   child: ElevatedButton(
                     onPressed: _isGenerating ? null : () {
                       setState(() {
@@ -380,10 +393,11 @@ class _ImageToVideoWidgetState extends State<ImageToVideoWidget>
                       });
                     },
                     child: Text(
-                      '${duration}s',
+                      SegmindApiService.getDurationDescription(duration),
                       style: TextStyle(
                         color: _selectedDuration == duration ? Colors.white : Color(0xFFff6b95),
                         fontWeight: FontWeight.w600,
+                        fontSize: 12,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -395,21 +409,23 @@ class _ImageToVideoWidgetState extends State<ImageToVideoWidget>
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
           
           SizedBox(height: 16),
           
           // CFG Scale
-          Text('Độ chính xác (${_cfgScale.toStringAsFixed(1)}):', 
+          Text('Độ tuân thủ mô tả (${_cfgScale.toStringAsFixed(1)}):', 
                style: TextStyle(color: Colors.white, fontSize: 16)),
+          Text('Khuyến nghị: 3.0-3.5 cho kết quả tốt nhất', 
+               style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
           Slider(
             value: _cfgScale,
-            min: 0.0,
-            max: 1.0,
-            divisions: 10,
+            min: 1.0,
+            max: 20.0,
+            divisions: 19,
             activeColor: Colors.white,
             inactiveColor: Colors.white.withOpacity(0.3),
             onChanged: _isGenerating ? null : (value) {
@@ -444,13 +460,18 @@ class _ImageToVideoWidgetState extends State<ImageToVideoWidget>
           ),
           SizedBox(height: 16),
           
+          Text(
+            'LTX Video cần mô tả chi tiết để tạo video chất lượng cao',
+            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13),
+          ),
+          SizedBox(height: 8),
           TextField(
             controller: _promptController,
             enabled: !_isGenerating,
-            maxLines: 3,
+            maxLines: 4,
             style: TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: 'Mô tả cách ảnh sẽ chuyển động...',
+              hintText: 'Ví dụ: Gentle camera pan from left to right, soft lighting changes, character looks around slowly, natural facial expressions, cinematic depth of field...',
               hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
               filled: true,
               fillColor: Colors.white.withOpacity(0.1),
